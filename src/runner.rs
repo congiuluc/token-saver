@@ -21,7 +21,7 @@ pub fn run(args: &[String]) -> Outcome {
     let (program, rest) = match args.split_first() {
         Some(parts) => parts,
         None => {
-            return Outcome { stdout: String::new(), stderr: "tokensaver: no command given\n".to_string(), code: 2 }
+            return Outcome { stdout: String::new(), stderr: "token-saver: no command given\n".to_string(), code: 2 }
         }
     };
 
@@ -33,7 +33,7 @@ pub fn run(args: &[String]) -> Outcome {
         },
         Err(err) => Outcome {
             stdout: String::new(),
-            stderr: format!("tokensaver: failed to run '{program}': {err}\n"),
+            stderr: format!("token-saver: failed to run '{program}': {err}\n"),
             code: 127,
         },
     }

@@ -1,8 +1,8 @@
 blank_issues_enabled: false
 contact_links:
   - name: Security reports
-    url: https://github.com/congiuluc/TokenSaver/security/policy
+    url: https://github.com/congiuluc/token-saver/security/policy
     about: Please report vulnerabilities privately as documented in SECURITY.md.
   - name: Support
-    url: https://github.com/congiuluc/TokenSaver/discussions
+    url: https://github.com/congiuluc/token-saver/discussions
     about: Ask questions and discuss usage in GitHub Discussions.

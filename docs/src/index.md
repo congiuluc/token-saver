@@ -1,9 +1,9 @@
-# TokenSaver
+# token-saver
 
-TokenSaver is a deterministic CLI proxy that executes a command and emits a
+token-saver is a deterministic CLI proxy that executes a command and emits a
 compact summary of its output.
 
-## Why TokenSaver
+## Why token-saver
 
 - Reduces noisy terminal output for humans and tooling.
 - Preserves important signals like failures and warnings.
@@ -16,18 +16,18 @@ Install a prebuilt binary (Linux/macOS shown; see [Installation](installation.md
 for Windows, Cargo, and from-source options):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.sh | sh
-tokensaver git status
+curl -fsSL https://raw.githubusercontent.com/congiuluc/token-saver/main/install.sh | sh
+token-saver git status
 ```
 
 Or build from source:
 
 ```sh
 cargo build --release
-./target/release/tokensaver git status
+./target/release/token-saver git status
 ```
 
-TokenSaver runs on Windows, Linux, and macOS (x86_64 and arm64).
+token-saver runs on Windows, Linux, and macOS (x86_64 and arm64).
 
 ## Documentation map
 

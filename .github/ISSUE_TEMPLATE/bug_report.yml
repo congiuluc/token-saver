@@ -1,5 +1,5 @@
 name: Bug report
-description: Report a reproducible problem in tokensaver
+description: Report a reproducible problem in token-saver
 title: "bug: "
 labels: [bug]
 body:
@@ -13,7 +13,7 @@ body:
     id: version
     attributes:
       label: Version
-      description: Which tokensaver version are you using?
+      description: Which token-saver version are you using?
       placeholder: v0.1.0
     validations:
       required: true
@@ -35,7 +35,7 @@ body:
     attributes:
       label: Command
       description: Exact command that triggered the issue
-      placeholder: tokensaver git status
+      placeholder: token-saver git status
     validations:
       required: true
 

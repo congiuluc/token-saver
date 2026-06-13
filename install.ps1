@@ -1,36 +1,36 @@
 <#
 .SYNOPSIS
-    tokensaver installer for Windows.
+    token-saver installer for Windows.
 
 .DESCRIPTION
     Downloads the latest (or a pinned) prebuilt release archive from GitHub,
-    verifies its SHA-256 checksum, and installs the tokensaver and ts binaries
+    verifies its SHA-256 checksum, and installs the token-saver and ts binaries
     into a directory on your PATH.
 
 .PARAMETER Version
     Release tag to install (for example v0.1.0). Defaults to the latest release.
 
 .PARAMETER BinDir
-    Install directory. Defaults to %LOCALAPPDATA%\Programs\tokensaver.
+    Install directory. Defaults to %LOCALAPPDATA%\Programs\token-saver.
 
 .EXAMPLE
-    irm https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.ps1 | iex
+    irm https://raw.githubusercontent.com/congiuluc/token-saver/main/install.ps1 | iex
 
 .EXAMPLE
     .\install.ps1 -Version v0.1.0
 #>
 [CmdletBinding()]
 param(
-    [string]$Version = $env:TOKENSAVER_VERSION,
-    [string]$BinDir = $env:TOKENSAVER_BIN_DIR
+    [string]$Version = $env:TOKEN_SAVER_VERSION,
+    [string]$BinDir = $env:TOKEN_SAVER_BIN_DIR
 )
 
 $ErrorActionPreference = "Stop"
-$repo = "congiuluc/TokenSaver"
+$repo = "congiuluc/token-saver"
 
 if ([string]::IsNullOrWhiteSpace($Version)) { $Version = "latest" }
 if ([string]::IsNullOrWhiteSpace($BinDir)) {
-    $BinDir = Join-Path $env:LOCALAPPDATA "Programs\tokensaver"
+    $BinDir = Join-Path $env:LOCALAPPDATA "Programs\token-saver"
 }
 
 # Detect CPU architecture.
@@ -41,7 +41,7 @@ $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
 }
 
 $target = "$arch-pc-windows-msvc"
-$asset = "tokensaver-$target.zip"
+$asset = "token-saver-$target.zip"
 
 $base = if ($Version -eq "latest") {
     "https://github.com/$repo/releases/latest/download"
@@ -50,7 +50,7 @@ else {
     "https://github.com/$repo/releases/download/$Version"
 }
 
-$tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("tokensaver-" + [System.Guid]::NewGuid().ToString("N"))
+$tmp = Join-Path ([System.IO.Path]::GetTempPath()) ("token-saver-" + [System.Guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 
 try {
@@ -76,10 +76,10 @@ try {
     Expand-Archive -Path $zipPath -DestinationPath $tmp -Force
 
     New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
-    Copy-Item (Join-Path $tmp "tokensaver-$target\tokensaver.exe") (Join-Path $BinDir "tokensaver.exe") -Force
-    Copy-Item (Join-Path $tmp "tokensaver-$target\ts.exe") (Join-Path $BinDir "ts.exe") -Force
+    Copy-Item (Join-Path $tmp "token-saver-$target\token-saver.exe") (Join-Path $BinDir "token-saver.exe") -Force
+    Copy-Item (Join-Path $tmp "token-saver-$target\ts.exe") (Join-Path $BinDir "ts.exe") -Force
 
-    Write-Host "Installed tokensaver.exe and ts.exe to $BinDir"
+    Write-Host "Installed token-saver.exe and ts.exe to $BinDir"
 
     # Add the install directory to the user PATH if it is not already present.
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
@@ -89,7 +89,7 @@ try {
     }
 
     Write-Host ""
-    Write-Host 'Run "tokensaver --help" to get started.'
+    Write-Host 'Run "token-saver --help" to get started.'
 }
 finally {
     Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue

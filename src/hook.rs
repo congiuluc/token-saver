@@ -1,4 +1,4 @@
-//! `tokensaver hook` — GitHub Copilot `postToolUse` hook adapter.
+//! `token-saver hook` — GitHub Copilot `postToolUse` hook adapter.
 //!
 //! Copilot runs `postToolUse` after every tool completes and lets a hook replace
 //! the tool's LLM-facing result by writing a `modifiedResult` JSON object to
@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn compresses_long_shell_result() {
-        std::env::set_var("TOKENSAVER_LOG", "off");
+        std::env::set_var("TOKEN_SAVER_LOG", "off");
         let body: String = (0..60).map(|i| format!("line {i}\\n")).collect();
         let payload = format!(
             "{{\"toolName\":\"bash\",\"toolResult\":{{\"resultType\":\"success\",\"textResultForLlm\":\"{body}\"}}}}"
@@ -203,7 +203,7 @@ mod tests {
 
     #[test]
     fn parses_vscode_snake_case_payload() {
-        std::env::set_var("TOKENSAVER_LOG", "off");
+        std::env::set_var("TOKEN_SAVER_LOG", "off");
         let body: String = (0..60).map(|i| format!("row {i}\\n")).collect();
         let payload = format!(
             "{{\"tool_name\":\"powershell\",\"tool_result\":{{\"result_type\":\"success\",\"text_result_for_llm\":\"{body}\"}}}}"

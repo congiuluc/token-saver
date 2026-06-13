@@ -1,6 +1,6 @@
-# Contributing to tokensaver
+# Contributing to token-saver
 
-Thanks for your interest in improving **tokensaver**! This document explains how
+Thanks for your interest in improving **token-saver**! This document explains how
 to set up your environment, the conventions the project follows, and how to get
 a change merged.
 
@@ -22,8 +22,8 @@ as described in that document.
 2. Fork and clone the repository:
 
    ```bash
-   git clone https://github.com/<your-user>/TokenSaver.git
-   cd TokenSaver
+   git clone https://github.com/<your-user>/token-saver.git
+   cd token-saver
    ```
 
 3. Build and run the test suite:
@@ -33,14 +33,14 @@ as described in that document.
    cargo test
    ```
 
-> `tokensaver` has a single build-time dependency (`tiktoken-rs`) and **zero
+> `token-saver` has a single build-time dependency (`tiktoken-rs`) and **zero
 > runtime dependencies**. Please keep it that way — new dependencies need a clear
 > justification in the pull request.
 
 ## Development workflow
 
-The project is a small Rust CLI with two binaries (`tokensaver` and `ts`) that
-both delegate to `tokensaver::run()` in [`src/lib.rs`](src/lib.rs). Most work
+The project is a small Rust CLI with two binaries (`token-saver` and `ts`) that
+both delegate to `token_saver::run()` in [`src/lib.rs`](src/lib.rs). Most work
 falls into one of these areas:
 
 - **A new per-command formatter** → add a module under [`src/format/`](src/format)
@@ -74,7 +74,7 @@ cargo clippy --fix --allow-dirty --all-targets --all-features
 - **Formatting** is enforced by `rustfmt` (default config). Do not hand-format.
 - **Lints**: clippy runs with `-D warnings`; the tree must be warning-free.
 - **Doc comments** (`///`) on public functions and modules, explaining intent.
-- **Status messages** go to **stderr** with a `tokensaver:` prefix; user-facing
+- **Status messages** go to **stderr** with a `token-saver:` prefix; user-facing
   results (summaries, JSON) go to **stdout** so they stay pipeable and testable.
 - **Tests**: add unit tests next to the code (`#[cfg(test)] mod tests`) and
   end-to-end tests in [`tests/cli.rs`](tests/cli.rs). Run CLI tests serially
@@ -93,7 +93,7 @@ cargo clippy --fix --allow-dirty --all-targets --all-features
 
 ## Reporting bugs & requesting features
 
-Use the [issue templates](https://github.com/congiuluc/TokenSaver/issues/new/choose).
+Use the [issue templates](https://github.com/congiuluc/token-saver/issues/new/choose).
 For security issues, follow [SECURITY.md](SECURITY.md) instead of opening a
 public issue.
 

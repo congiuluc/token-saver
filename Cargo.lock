@@ -181,7 +181,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokensaver"
+name = "token-saver"
 version = "0.1.0"
 dependencies = [
  "tiktoken-rs",

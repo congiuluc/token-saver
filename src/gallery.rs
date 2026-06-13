@@ -1,4 +1,4 @@
-//! The `tokensaver gallery` (a.k.a. `marketplace`) feature.
+//! The `token-saver gallery` (a.k.a. `marketplace`) feature.
 //!
 //! Harvests *user-defined* Copilot context objects — agents, skills, prompts,
 //! and custom instructions — out of the user/device folders and into a local
@@ -7,14 +7,14 @@
 //!
 //! Subcommands:
 //!
-//!   tokensaver gallery harvest [--apply] [--quiet]   Move user objects into the gallery (dry-run by default).
-//!   tokensaver gallery list [category]               List items stored in the gallery.
-//!   tokensaver gallery show <id>                      Show details and a content preview for one item.
-//!   tokensaver gallery install <id> [--dir <path>] [--force]   Install an item into a workspace.
-//!   tokensaver gallery remove <id>                    Delete an item from the gallery.
-//!   tokensaver gallery serve [--port N] [--open]      Serve a browser gallery (localhost only).
+//!   token-saver gallery harvest [--apply] [--quiet]   Move user objects into the gallery (dry-run by default).
+//!   token-saver gallery list [category]               List items stored in the gallery.
+//!   token-saver gallery show <id>                      Show details and a content preview for one item.
+//!   token-saver gallery install <id> [--dir <path>] [--force]   Install an item into a workspace.
+//!   token-saver gallery remove <id>                    Delete an item from the gallery.
+//!   token-saver gallery serve [--port N] [--open]      Serve a browser gallery (localhost only).
 //!
-//! The gallery lives at `~/.tokensaver/gallery`. Each item is a self-contained
+//! The gallery lives at `~/.token-saver/gallery`. Each item is a self-contained
 //! folder under `items/<id>/` holding the payload plus a `meta` description file.
 
 use std::env;
@@ -29,7 +29,7 @@ use crate::assess::{self, Category};
 
 /// Folders that should never be harvested even when found under a user root.
 const HARVEST_PRUNE: &[&str] =
-    &[".git", "node_modules", "target", "dist", "build", "out", "installed-plugins", "tokensaver-gallery"];
+    &[".git", "node_modules", "target", "dist", "build", "out", "installed-plugins", "token-saver-gallery"];
 
 /// Maximum recursion depth when scanning user roots for harvest candidates.
 const MAX_DEPTH: usize = 12;
@@ -110,7 +110,7 @@ pub fn run(args: &[String]) -> ExitCode {
         "remove" | "rm" | "delete" => cmd_remove(rest),
         "serve" | "web" | "browser" => cmd_serve(rest),
         other => {
-            eprintln!("tokensaver: unknown gallery command '{other}'");
+            eprintln!("token-saver: unknown gallery command '{other}'");
             print_help();
             ExitCode::from(2)
         }
@@ -120,10 +120,10 @@ pub fn run(args: &[String]) -> ExitCode {
 /// Prints gallery usage.
 fn print_help() {
     println!(
-        "tokensaver gallery — a local marketplace for your Copilot context objects\n\
+        "token-saver gallery — a local marketplace for your Copilot context objects\n\
          \n\
          USAGE:\n\
-         \x20 tokensaver gallery <command> [options]\n\
+         \x20 token-saver gallery <command> [options]\n\
          \n\
          COMMANDS:\n\
          \x20 harvest [--apply] [--quiet]   Move user-defined agents/skills/prompts/instructions\n\
@@ -135,7 +135,7 @@ fn print_help() {
          \x20 remove <id>                   Delete an item from the gallery.\n\
          \x20 serve [--port N] [--open]     Serve a browser gallery on http://127.0.0.1:7878.\n\
          \n\
-         The gallery is stored at ~/.tokensaver/gallery. VS Code extension-provided\n\
+         The gallery is stored at ~/.token-saver/gallery. VS Code extension-provided\n\
          objects are never harvested."
     );
 }
@@ -144,15 +144,15 @@ fn print_help() {
 // Gallery storage
 // ---------------------------------------------------------------------------
 
-/// Returns the gallery root directory (`~/.tokensaver/gallery`), if a home is known.
+/// Returns the gallery root directory (`~/.token-saver/gallery`), if a home is known.
 fn gallery_root() -> Option<PathBuf> {
-    assess::home_dir().map(|home| home.join(".tokensaver").join("gallery"))
+    assess::home_dir().map(|home| home.join(".token-saver").join("gallery"))
 }
 
 /// Returns the gallery root or prints an error and returns `Err`.
 fn require_gallery_root() -> Result<PathBuf, ExitCode> {
     gallery_root().ok_or_else(|| {
-        eprintln!("tokensaver: could not determine your home directory (set HOME or USERPROFILE)");
+        eprintln!("token-saver: could not determine your home directory (set HOME or USERPROFILE)");
         ExitCode::FAILURE
     })
 }
@@ -247,7 +247,7 @@ fn cmd_harvest(args: &[String]) -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             other => {
-                eprintln!("tokensaver: unknown harvest option '{other}'");
+                eprintln!("token-saver: unknown harvest option '{other}'");
                 return ExitCode::from(2);
             }
         }
@@ -260,12 +260,12 @@ fn cmd_harvest(args: &[String]) -> ExitCode {
 
     let candidates = find_candidates();
     if candidates.is_empty() {
-        println!("tokensaver: no user-defined context objects found to harvest.");
+        println!("token-saver: no user-defined context objects found to harvest.");
         return ExitCode::SUCCESS;
     }
 
     if !apply {
-        println!("tokensaver: the following {} item(s) would be moved into the gallery:\n", candidates.len());
+        println!("token-saver: the following {} item(s) would be moved into the gallery:\n", candidates.len());
         for cand in &candidates {
             println!("  [{}] {}\n      from {}", cand.category.label(), cand.name, display_path(&cand.path));
         }
@@ -294,14 +294,14 @@ fn cmd_harvest(args: &[String]) -> ExitCode {
             }
             Err(err) => {
                 failed += 1;
-                eprintln!("tokensaver: failed to harvest {}: {err}", display_path(&cand.path));
+                eprintln!("token-saver: failed to harvest {}: {err}", display_path(&cand.path));
             }
         }
     }
 
-    println!("\ntokensaver: harvested {moved} item(s) into {}.", display_path(&root));
+    println!("\ntoken-saver: harvested {moved} item(s) into {}.", display_path(&root));
     if failed > 0 {
-        eprintln!("tokensaver: {failed} item(s) could not be harvested.");
+        eprintln!("token-saver: {failed} item(s) could not be harvested.");
         return ExitCode::FAILURE;
     }
     ExitCode::SUCCESS
@@ -447,7 +447,7 @@ fn cmd_list(args: &[String]) -> ExitCode {
         Some(value) if !value.starts_with('-') => match assess::parse_category(value) {
             Some(category) => Some(category),
             None => {
-                eprintln!("tokensaver: unknown category '{value}'");
+                eprintln!("token-saver: unknown category '{value}'");
                 return ExitCode::from(2);
             }
         },
@@ -463,7 +463,7 @@ fn cmd_list(args: &[String]) -> ExitCode {
         load_items(&root).into_iter().filter(|item| filter.is_none_or(|c| c == item.category)).collect();
 
     if items.is_empty() {
-        println!("tokensaver: the gallery is empty. Run `tokensaver gallery harvest --apply` to populate it.");
+        println!("token-saver: the gallery is empty. Run `token-saver gallery harvest --apply` to populate it.");
         return ExitCode::SUCCESS;
     }
 
@@ -478,7 +478,7 @@ fn cmd_list(args: &[String]) -> ExitCode {
 /// Implements `gallery show`.
 fn cmd_show(args: &[String]) -> ExitCode {
     let Some(id) = args.first() else {
-        eprintln!("tokensaver: usage: tokensaver gallery show <id>");
+        eprintln!("token-saver: usage: token-saver gallery show <id>");
         return ExitCode::from(2);
     };
 
@@ -488,7 +488,7 @@ fn cmd_show(args: &[String]) -> ExitCode {
     };
 
     let Some(item) = load_item(&root, id) else {
-        eprintln!("tokensaver: no gallery item with id '{id}'");
+        eprintln!("token-saver: no gallery item with id '{id}'");
         return ExitCode::FAILURE;
     };
 
@@ -522,7 +522,7 @@ fn cmd_install(args: &[String]) -> ExitCode {
         match args[i].as_str() {
             "--dir" | "-d" => {
                 let Some(value) = args.get(i + 1) else {
-                    eprintln!("tokensaver: --dir requires a path");
+                    eprintln!("token-saver: --dir requires a path");
                     return ExitCode::from(2);
                 };
                 dir = Some(PathBuf::from(value));
@@ -533,12 +533,12 @@ fn cmd_install(args: &[String]) -> ExitCode {
                 i += 1;
             }
             other if other.starts_with('-') => {
-                eprintln!("tokensaver: unknown install option '{other}'");
+                eprintln!("token-saver: unknown install option '{other}'");
                 return ExitCode::from(2);
             }
             other => {
                 if id.is_some() {
-                    eprintln!("tokensaver: unexpected argument '{other}'");
+                    eprintln!("token-saver: unexpected argument '{other}'");
                     return ExitCode::from(2);
                 }
                 id = Some(other.to_string());
@@ -548,7 +548,7 @@ fn cmd_install(args: &[String]) -> ExitCode {
     }
 
     let Some(id) = id else {
-        eprintln!("tokensaver: usage: tokensaver gallery install <id> [--dir <path>] [--force]");
+        eprintln!("token-saver: usage: token-saver gallery install <id> [--dir <path>] [--force]");
         return ExitCode::from(2);
     };
 
@@ -560,14 +560,14 @@ fn cmd_install(args: &[String]) -> ExitCode {
 
     match install_item(&root, &id, &workspace, force) {
         Ok(written) => {
-            println!("tokensaver: installed '{id}' into {}:", display_path(&workspace));
+            println!("token-saver: installed '{id}' into {}:", display_path(&workspace));
             for path in written {
                 println!("  {}", display_path(&path));
             }
             ExitCode::SUCCESS
         }
         Err(err) => {
-            eprintln!("tokensaver: {err}");
+            eprintln!("token-saver: {err}");
             ExitCode::FAILURE
         }
     }
@@ -650,7 +650,7 @@ fn is_merge_target(item: &Item) -> bool {
 fn append_merge(payload: &Path, dest: &Path) -> io::Result<()> {
     let addition = fs::read_to_string(payload)?;
     let mut file = fs::OpenOptions::new().append(true).open(dest)?;
-    write!(file, "\n\n<!-- tokensaver-gallery: appended content -->\n{addition}")?;
+    write!(file, "\n\n<!-- token-saver-gallery: appended content -->\n{addition}")?;
     Ok(())
 }
 
@@ -661,11 +661,11 @@ fn append_merge(payload: &Path, dest: &Path) -> io::Result<()> {
 /// Implements `gallery remove`.
 fn cmd_remove(args: &[String]) -> ExitCode {
     let Some(id) = args.first() else {
-        eprintln!("tokensaver: usage: tokensaver gallery remove <id>");
+        eprintln!("token-saver: usage: token-saver gallery remove <id>");
         return ExitCode::from(2);
     };
     if !is_safe_id(id) {
-        eprintln!("tokensaver: invalid item id '{id}'");
+        eprintln!("token-saver: invalid item id '{id}'");
         return ExitCode::from(2);
     }
 
@@ -675,16 +675,16 @@ fn cmd_remove(args: &[String]) -> ExitCode {
     };
     let item_dir = root.join("items").join(id);
     if !item_dir.is_dir() {
-        eprintln!("tokensaver: no gallery item with id '{id}'");
+        eprintln!("token-saver: no gallery item with id '{id}'");
         return ExitCode::FAILURE;
     }
     match fs::remove_dir_all(&item_dir) {
         Ok(()) => {
-            println!("tokensaver: removed '{id}' from the gallery.");
+            println!("token-saver: removed '{id}' from the gallery.");
             ExitCode::SUCCESS
         }
         Err(err) => {
-            eprintln!("tokensaver: failed to remove '{id}': {err}");
+            eprintln!("token-saver: failed to remove '{id}': {err}");
             ExitCode::FAILURE
         }
     }
@@ -703,7 +703,7 @@ fn cmd_serve(args: &[String]) -> ExitCode {
         match args[i].as_str() {
             "--port" | "-p" => {
                 let Some(value) = args.get(i + 1).and_then(|v| v.parse::<u16>().ok()) else {
-                    eprintln!("tokensaver: --port requires a number (1-65535)");
+                    eprintln!("token-saver: --port requires a number (1-65535)");
                     return ExitCode::from(2);
                 };
                 port = value;
@@ -714,7 +714,7 @@ fn cmd_serve(args: &[String]) -> ExitCode {
                 i += 1;
             }
             other => {
-                eprintln!("tokensaver: unknown serve option '{other}'");
+                eprintln!("token-saver: unknown serve option '{other}'");
                 return ExitCode::from(2);
             }
         }
@@ -728,13 +728,13 @@ fn cmd_serve(args: &[String]) -> ExitCode {
     let listener = match TcpListener::bind(("127.0.0.1", port)) {
         Ok(listener) => listener,
         Err(err) => {
-            eprintln!("tokensaver: could not bind to 127.0.0.1:{port}: {err}");
+            eprintln!("token-saver: could not bind to 127.0.0.1:{port}: {err}");
             return ExitCode::FAILURE;
         }
     };
 
     let url = format!("http://127.0.0.1:{port}/");
-    println!("tokensaver: gallery serving at {url} (press Ctrl+C to stop)");
+    println!("token-saver: gallery serving at {url} (press Ctrl+C to stop)");
     if open {
         open_browser(&url);
     }
@@ -745,11 +745,11 @@ fn cmd_serve(args: &[String]) -> ExitCode {
                 let root = root.clone();
                 std::thread::spawn(move || {
                     if let Err(err) = handle_connection(stream, &root) {
-                        eprintln!("tokensaver: connection error: {err}");
+                        eprintln!("token-saver: connection error: {err}");
                     }
                 });
             }
-            Err(err) => eprintln!("tokensaver: accept error: {err}"),
+            Err(err) => eprintln!("token-saver: accept error: {err}"),
         }
     }
     ExitCode::SUCCESS
@@ -895,7 +895,7 @@ fn index_html() -> String {
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>tokensaver gallery</title>
+<title>token-saver gallery</title>
 <style>
   :root { color-scheme: light dark; }
   body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
@@ -924,7 +924,7 @@ fn index_html() -> String {
 </head>
 <body>
 <header>
-  <h1>tokensaver gallery</h1>
+  <h1>token-saver gallery</h1>
   <p>Your harvested Copilot agents, skills, prompts &amp; instructions. Served locally.</p>
 </header>
 <main>
@@ -947,7 +947,7 @@ function renderList() {
   if (items.length === 0) {
     const e = document.createElement('div');
     e.className = 'empty';
-    e.textContent = 'The gallery is empty. Run: tokensaver gallery harvest --apply';
+    e.textContent = 'The gallery is empty. Run: token-saver gallery harvest --apply';
     list.appendChild(e);
     return;
   }
@@ -1042,7 +1042,7 @@ fn open_browser(url: &str) {
     #[cfg(all(unix, not(target_os = "macos")))]
     let result = Command::new("xdg-open").arg(url).spawn();
     if let Err(err) = result {
-        eprintln!("tokensaver: could not open browser: {err}");
+        eprintln!("token-saver: could not open browser: {err}");
     }
 }
 

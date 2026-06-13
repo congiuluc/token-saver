@@ -1,10 +1,10 @@
 //! Token accounting: estimates token counts and appends per-invocation usage
-//! records to a log file, plus reads them back for `tokensaver gain`.
+//! records to a log file, plus reads them back for `token-saver gain`.
 //!
-//! Primary token counts are selected by `TOKENSAVER_TOKENIZER` and can be near-real
+//! Primary token counts are selected by `TOKEN_SAVER_TOKENIZER` and can be near-real
 //! with a model tokenizer backend. The log also stores heuristic and model
 //! counts side by side for comparison. Logging is enabled by default to
-//! `~/.tokensaver/metrics.jsonl`; set `TOKENSAVER_LOG` to a path to redirect it, or to
+//! `~/.token-saver/metrics.jsonl`; set `TOKEN_SAVER_LOG` to a path to redirect it, or to
 //! `off`, `0`, or empty to disable it. Logging failures are swallowed so they
 //! never break a command.
 
@@ -22,19 +22,19 @@ pub struct Totals {
     pub count: u64,
     /// Total character count across all raw (original) outputs.
     pub raw_chars: u64,
-    /// Total character count across all tokensaver outputs.
+    /// Total character count across all token-saver outputs.
     pub out_chars: u64,
     /// Estimated tokens across all raw (original) inputs.
     pub raw_tokens: u64,
-    /// Estimated tokens across all tokensaver outputs.
+    /// Estimated tokens across all token-saver outputs.
     pub out_tokens: u64,
     /// Heuristic token totals across all raw inputs.
     pub raw_tokens_heuristic: u64,
-    /// Heuristic token totals across all tokensaver outputs.
+    /// Heuristic token totals across all token-saver outputs.
     pub out_tokens_heuristic: u64,
     /// Model tokenizer totals across all raw inputs.
     pub raw_tokens_model: u64,
-    /// Model tokenizer totals across all tokensaver outputs.
+    /// Model tokenizer totals across all token-saver outputs.
     pub out_tokens_model: u64,
     /// Number of records that included model tokenizer counts.
     pub model_token_samples: u64,
@@ -43,7 +43,7 @@ pub struct Totals {
 /// Result of resetting the gain log.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ResetOutcome {
-    /// Logging is disabled via `TOKENSAVER_LOG`.
+    /// Logging is disabled via `TOKEN_SAVER_LOG`.
     Disabled,
     /// The metrics log existed and was removed.
     Cleared(PathBuf),
@@ -51,12 +51,12 @@ pub enum ResetOutcome {
     AlreadyEmpty(PathBuf),
 }
 
-/// Appends one usage record (raw vs. tokensaver token estimates) to the log
+/// Appends one usage record (raw vs. token-saver token estimates) to the log
 /// and forwards the event to the OpenTelemetry exporter.
 ///
 /// `mode` is the invocation kind (`run`, `stdin`, `hook`), `command` is the
 /// user-facing command string, `raw` is the original output, `out` the
-/// tokensaver form and `duration` the wall-clock run time. Skips the log
+/// token-saver form and `duration` the wall-clock run time. Skips the log
 /// file when logging is disabled (OpenTelemetry export still runs), and silently
 /// ignores any I/O error so the primary command is never affected.
 pub fn record(mode: &str, command: &str, raw: &str, out: &str, duration: Duration) {
@@ -186,10 +186,10 @@ fn extract_u64(line: &str, key: &str) -> Option<u64> {
     digits.parse().ok()
 }
 
-/// Resolves the active log path, honoring the `TOKENSAVER_LOG` override and the
+/// Resolves the active log path, honoring the `TOKEN_SAVER_LOG` override and the
 /// disable sentinels (`off`, `0`, or empty). Returns `None` when disabled.
 fn log_path() -> Option<PathBuf> {
-    match env::var("TOKENSAVER_LOG") {
+    match env::var("TOKEN_SAVER_LOG") {
         Ok(value) => {
             let trimmed = value.trim();
             if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("off") || trimmed == "0" {
@@ -198,7 +198,7 @@ fn log_path() -> Option<PathBuf> {
                 Some(PathBuf::from(trimmed))
             }
         }
-        Err(_) => home_dir().map(|home| home.join(".tokensaver").join("metrics.jsonl")),
+        Err(_) => home_dir().map(|home| home.join(".token-saver").join("metrics.jsonl")),
     }
 }
 
@@ -251,7 +251,7 @@ mod tests {
 
     fn unique_temp_path(name: &str) -> PathBuf {
         let nonce = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-        env::temp_dir().join(format!("tokensaver-{name}-{nonce}.jsonl"))
+        env::temp_dir().join(format!("token-saver-{name}-{nonce}.jsonl"))
     }
 
     #[test]
@@ -336,24 +336,24 @@ mod tests {
     #[test]
     fn reset_log_reports_disabled_when_logging_is_off() {
         let _guard = env_lock().lock().expect("env lock");
-        unsafe { env::set_var("TOKENSAVER_LOG", "off") };
+        unsafe { env::set_var("TOKEN_SAVER_LOG", "off") };
         let outcome = reset_log().expect("reset should succeed");
         assert_eq!(outcome, ResetOutcome::Disabled);
-        unsafe { env::remove_var("TOKENSAVER_LOG") };
+        unsafe { env::remove_var("TOKEN_SAVER_LOG") };
     }
 
     #[test]
     fn reset_log_clears_existing_log() {
         let _guard = env_lock().lock().expect("env lock");
         let path = unique_temp_path("reset-existing");
-        unsafe { env::set_var("TOKENSAVER_LOG", &path) };
+        unsafe { env::set_var("TOKEN_SAVER_LOG", &path) };
         fs::write(&path, "{\"rawTokens\":10,\"outTokens\":5}\n").expect("write test log");
 
         let outcome = reset_log().expect("reset should succeed");
         assert_eq!(outcome, ResetOutcome::Cleared(path.clone()));
         assert!(!path.exists(), "log file should be removed");
 
-        unsafe { env::remove_var("TOKENSAVER_LOG") };
+        unsafe { env::remove_var("TOKEN_SAVER_LOG") };
     }
 
     #[test]
@@ -361,11 +361,11 @@ mod tests {
         let _guard = env_lock().lock().expect("env lock");
         let path = unique_temp_path("reset-missing");
         let _ = fs::remove_file(&path);
-        unsafe { env::set_var("TOKENSAVER_LOG", &path) };
+        unsafe { env::set_var("TOKEN_SAVER_LOG", &path) };
 
         let outcome = reset_log().expect("reset should succeed");
         assert_eq!(outcome, ResetOutcome::AlreadyEmpty(path.clone()));
 
-        unsafe { env::remove_var("TOKENSAVER_LOG") };
+        unsafe { env::remove_var("TOKEN_SAVER_LOG") };
     }
 }

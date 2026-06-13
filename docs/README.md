@@ -1,8 +1,8 @@
-# TokenSaver Documentation
+# token-saver Documentation
 
 ## Description
 
-This folder contains the documentation website source for TokenSaver.
+This folder contains the documentation website source for token-saver.
 The site is built with mdBook and published through GitHub Pages.
 
 ## Installation instructions

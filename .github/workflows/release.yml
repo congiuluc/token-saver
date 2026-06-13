@@ -72,9 +72,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          staging="tokensaver-${{ matrix.target }}"
+          staging="token-saver-${{ matrix.target }}"
           mkdir -p "$staging"
-          cp "target/${{ matrix.target }}/release/tokensaver" "$staging/"
+          cp "target/${{ matrix.target }}/release/token-saver" "$staging/"
           cp "target/${{ matrix.target }}/release/ts" "$staging/"
           cp README.md LICENSE "$staging/"
           tar -czf "$staging.tar.gz" "$staging"
@@ -85,9 +85,9 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $staging = "tokensaver-${{ matrix.target }}"
+          $staging = "token-saver-${{ matrix.target }}"
           New-Item -ItemType Directory -Force -Path $staging | Out-Null
-          Copy-Item "target/${{ matrix.target }}/release/tokensaver.exe" $staging
+          Copy-Item "target/${{ matrix.target }}/release/token-saver.exe" $staging
           Copy-Item "target/${{ matrix.target }}/release/ts.exe" $staging
           Copy-Item README.md, LICENSE $staging
           Compress-Archive -Path $staging -DestinationPath "$staging.zip" -Force
@@ -97,10 +97,10 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: tokensaver-${{ matrix.target }}
+          name: token-saver-${{ matrix.target }}
           path: |
-            tokensaver-${{ matrix.target }}.${{ matrix.archive }}
-            tokensaver-${{ matrix.target }}.${{ matrix.archive }}.sha256
+            token-saver-${{ matrix.target }}.${{ matrix.archive }}
+            token-saver-${{ matrix.target }}.${{ matrix.archive }}.sha256
 
   publish:
     name: Publish GitHub release

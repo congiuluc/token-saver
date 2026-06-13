@@ -1,4 +1,4 @@
-//! `tokensaver context` — inventory the GitHub Copilot context objects available
+//! `token-saver context` — inventory the GitHub Copilot context objects available
 //! to the agent (custom instructions, prompt files, agents/chat modes, skills and
 //! MCP tool configs) across the current workspace and the whole device, and
 //! estimate the token cost of each one.
@@ -15,8 +15,8 @@
 //! - MCP `mcp.json` configs are counted in full (they are small and their tool
 //!   list is exposed while the server is configured).
 //!
-//! Token counts reuse the active `TOKENSAVER_TOKENIZER` backend, consistent with
-//! `tokensaver gain` and `tokensaver tokens`.
+//! Token counts reuse the active `TOKEN_SAVER_TOKENIZER` backend, consistent with
+//! `token-saver gain` and `token-saver tokens`.
 
 use std::collections::HashMap;
 use std::collections::HashSet;
@@ -134,7 +134,7 @@ struct Task {
     depth: usize,
 }
 
-/// Parsed command-line options for `tokensaver context`.
+/// Parsed command-line options for `token-saver context`.
 struct Options {
     category: Option<Category>,
     top: usize,
@@ -152,9 +152,9 @@ pub fn run(args: &[String]) -> ExitCode {
     let opts = match parse_args(args) {
         Ok(opts) => opts,
         Err(msg) => {
-            eprintln!("tokensaver: {msg}");
+            eprintln!("token-saver: {msg}");
             eprintln!(
-                "usage: tokensaver context [category] [--category <name>] [--top N] \
+                "usage: token-saver context [category] [--category <name>] [--top N] \
                  [--window N] [--workspace|--user] [--json] [--md <file>] [--quiet]"
             );
             return ExitCode::from(2);
@@ -172,11 +172,11 @@ pub fn run(args: &[String]) -> ExitCode {
         match fs::write(path, markdown) {
             Ok(()) => {
                 if !opts.quiet {
-                    eprintln!("tokensaver: wrote Markdown report to {}", display_path(path));
+                    eprintln!("token-saver: wrote Markdown report to {}", display_path(path));
                 }
             }
             Err(err) => {
-                eprintln!("tokensaver: could not write {}: {err}", display_path(path));
+                eprintln!("token-saver: could not write {}: {err}", display_path(path));
                 return ExitCode::FAILURE;
             }
         }
@@ -210,7 +210,7 @@ fn scan_roots(roots: &[Root], opts: &Options) -> Vec<PathBuf> {
             Scope::User => USER_PRUNE,
         };
         if progress {
-            eprintln!("tokensaver: scanning {}", display_path(&root.path));
+            eprintln!("token-saver: scanning {}", display_path(&root.path));
         }
         let Ok(entries) = fs::read_dir(&root.path) else {
             continue;
@@ -235,7 +235,7 @@ fn scan_roots(roots: &[Root], opts: &Options) -> Vec<PathBuf> {
         thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(1, 16).min(tasks.len().max(1));
 
     if progress {
-        eprintln!("tokensaver: walking {} directories with {} workers…", fmt_num(tasks.len() as u64), worker_count);
+        eprintln!("token-saver: walking {} directories with {} workers…", fmt_num(tasks.len() as u64), worker_count);
     }
 
     let queue = Arc::new(Mutex::new(tasks));
@@ -270,7 +270,7 @@ fn scan_roots(roots: &[Root], opts: &Options) -> Vec<PathBuf> {
 
     if progress {
         eprintln!(
-            "tokensaver: found {} candidate objects in {} ms",
+            "token-saver: found {} candidate objects in {} ms",
             fmt_num(candidates.len() as u64),
             started.elapsed().as_millis()
         );
@@ -528,7 +528,7 @@ fn build_found(candidates: &[PathBuf], filter: Option<Category>, quiet: bool) ->
     }
 
     if !quiet {
-        eprintln!("tokensaver: reading and counting tokens for {} candidate objects\u{2026}", total);
+        eprintln!("token-saver: reading and counting tokens for {} candidate objects\u{2026}", total);
     }
     let started = Instant::now();
 
@@ -571,7 +571,7 @@ fn build_found(candidates: &[PathBuf], filter: Option<Category>, quiet: bool) ->
                 let percent = processed * 100 / total;
                 if percent >= next_milestone && last_tick.elapsed().as_millis() >= 250 {
                     eprintln!(
-                        "tokensaver: analyzed {percent}% ({processed}/{total} objects, \
+                        "token-saver: analyzed {percent}% ({processed}/{total} objects, \
                          {kept} kept)\u{2026}"
                     );
                     next_milestone = (percent / 10) * 10 + 10;
@@ -593,7 +593,7 @@ fn build_found(candidates: &[PathBuf], filter: Option<Category>, quiet: bool) ->
 
     if !quiet {
         eprintln!(
-            "tokensaver: analyzed {} objects, kept {} in {} ms",
+            "token-saver: analyzed {} objects, kept {} in {} ms",
             total,
             found.len(),
             started.elapsed().as_millis()
@@ -787,7 +787,7 @@ fn identity(item: &Found) -> String {
 
 /// Renders the compact, grouped text report.
 fn print_report(found: &[Found], opts: &Options, root_count: usize) {
-    println!("tokensaver — Copilot context inventory");
+    println!("token-saver — Copilot context inventory");
     println!("  tokenizer:    {}", tokenizer::active_mode().label());
     println!("  scanned:      {} files across {} roots", found.len(), root_count);
     println!("  window:       {} tokens", fmt_num(opts.window));
@@ -1231,7 +1231,7 @@ mod tests {
 
     #[test]
     fn walk_collects_matches_and_prunes() {
-        let base = std::env::temp_dir().join(format!("tokensaver-assess-{}", std::process::id()));
+        let base = std::env::temp_dir().join(format!("token-saver-assess-{}", std::process::id()));
         let _ = fs::remove_dir_all(&base);
         fs::create_dir_all(base.join(".github")).unwrap();
         fs::create_dir_all(base.join("node_modules").join("pkg")).unwrap();

@@ -1,22 +1,22 @@
 #!/bin/sh
-# tokensaver installer for Linux and macOS.
+# token-saver installer for Linux and macOS.
 #
 # Downloads the latest (or a pinned) prebuilt release archive from GitHub,
-# verifies its SHA-256 checksum, and installs the `tokensaver` and `ts`
+# verifies its SHA-256 checksum, and installs the `token-saver` and `ts`
 # binaries into a directory on your PATH.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/congiuluc/token-saver/main/install.sh | sh
 #
 # Environment variables:
-#   TOKENSAVER_VERSION   Tag to install (e.g. v0.1.0). Defaults to the latest release.
-#   TOKENSAVER_BIN_DIR   Install directory. Defaults to ~/.local/bin.
+#   TOKEN_SAVER_VERSION   Tag to install (e.g. v0.1.0). Defaults to the latest release.
+#   TOKEN_SAVER_BIN_DIR   Install directory. Defaults to ~/.local/bin.
 
 set -eu
 
-REPO="congiuluc/TokenSaver"
-BIN_DIR="${TOKENSAVER_BIN_DIR:-$HOME/.local/bin}"
-VERSION="${TOKENSAVER_VERSION:-latest}"
+REPO="congiuluc/token-saver"
+BIN_DIR="${TOKEN_SAVER_BIN_DIR:-$HOME/.local/bin}"
+VERSION="${TOKEN_SAVER_VERSION:-latest}"
 
 err() {
     printf 'error: %s\n' "$1" >&2
@@ -57,7 +57,7 @@ case "$arch" in
 esac
 
 target="${arch}-${os}"
-asset="tokensaver-${target}.tar.gz"
+asset="token-saver-${target}.tar.gz"
 
 if [ "$VERSION" = "latest" ]; then
     base="https://github.com/${REPO}/releases/latest/download"
@@ -85,10 +85,10 @@ fi
 tar -xzf "${tmp}/${asset}" -C "$tmp"
 
 mkdir -p "$BIN_DIR"
-install -m 0755 "${tmp}/tokensaver-${target}/tokensaver" "${BIN_DIR}/tokensaver"
-install -m 0755 "${tmp}/tokensaver-${target}/ts" "${BIN_DIR}/ts"
+install -m 0755 "${tmp}/token-saver-${target}/token-saver" "${BIN_DIR}/token-saver"
+install -m 0755 "${tmp}/token-saver-${target}/ts" "${BIN_DIR}/ts"
 
-printf 'Installed tokensaver and ts to %s\n' "$BIN_DIR"
+printf 'Installed token-saver and ts to %s\n' "$BIN_DIR"
 
 case ":$PATH:" in
     *":$BIN_DIR:"*) ;;
@@ -98,4 +98,4 @@ case ":$PATH:" in
         ;;
 esac
 
-printf '\nRun "tokensaver --help" to get started.\n'
+printf '\nRun "token-saver --help" to get started.\n'

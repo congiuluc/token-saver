@@ -1,24 +1,24 @@
-//! `tokensaver` — run a command and print an extremely compact summary of its output.
+//! `token-saver` — run a command and print an extremely compact summary of its output.
 //!
 //! Usage:
-//!   tokensaver <command> [args...]        Run the command and print a compact summary.
-//!   tokensaver -x | --extreme <command>   Run and print an even more aggressive summary.
-//!   tokensaver --raw <command> ...        Run the command and print its raw output unchanged.
-//!   tokensaver - | --stdin                Read stdin and print its compact form.
-//!   tokensaver init [--global|--cli]      Register tokensaver with GitHub Copilot.
-//!   tokensaver init --hook [--global]     Install a Copilot postToolUse hook.
-//!   tokensaver uninit [--global|--cli]    Remove what `tokensaver init` configured.
-//!   tokensaver uninit --hook [--global]   Remove the Copilot postToolUse hook.
-//!   tokensaver hook                       Run as a Copilot postToolUse hook (reads stdin).
-//!   tokensaver gain                       Show logged token savings.
-//!   tokensaver gain --reset               Reset logged token savings.
-//!   tokensaver tokens ...                 Calculate tokens for prompt text or file content.
-//!   tokensaver optimize --file <path>     Compact a file's text and report token savings.
-//!   tokensaver context [category]         Inventory Copilot context objects and their token cost.
-//!   tokensaver gallery <command>          Harvest, list, install, or serve a local Copilot object gallery.
-//!   tokensaver update [--check|--force]   Update tokensaver to the latest release.
-//!   tokensaver version | --version | -V   Print the installed version.
-//!   tokensaver -h | --help                Show usage.
+//!   token-saver <command> [args...]        Run the command and print a compact summary.
+//!   token-saver -x | --extreme <command>   Run and print an even more aggressive summary.
+//!   token-saver --raw <command> ...        Run the command and print its raw output unchanged.
+//!   token-saver - | --stdin                Read stdin and print its compact form.
+//!   token-saver init [--global|--cli]      Register token-saver with GitHub Copilot.
+//!   token-saver init --hook [--global]     Install a Copilot postToolUse hook.
+//!   token-saver uninit [--global|--cli]    Remove what `token-saver init` configured.
+//!   token-saver uninit --hook [--global]   Remove the Copilot postToolUse hook.
+//!   token-saver hook                       Run as a Copilot postToolUse hook (reads stdin).
+//!   token-saver gain                       Show logged token savings.
+//!   token-saver gain --reset               Reset logged token savings.
+//!   token-saver tokens ...                 Calculate tokens for prompt text or file content.
+//!   token-saver optimize --file <path>     Compact a file's text and report token savings.
+//!   token-saver context [category]         Inventory Copilot context objects and their token cost.
+//!   token-saver gallery <command>          Harvest, list, install, or serve a local Copilot object gallery.
+//!   token-saver update [--check|--force]   Update token-saver to the latest release.
+//!   token-saver version | --version | -V   Print the installed version.
+//!   token-saver -h | --help                Show usage.
 
 use std::env;
 use std::fs;
@@ -38,7 +38,7 @@ pub mod runner;
 pub mod tokenizer;
 pub mod update;
 
-/// Runs the `tokensaver` CLI and returns the process exit code.
+/// Runs the `token-saver` CLI and returns the process exit code.
 pub fn run() -> ExitCode {
     let mut args: Vec<String> = env::args().skip(1).collect();
 
@@ -53,7 +53,7 @@ pub fn run() -> ExitCode {
             return ExitCode::SUCCESS;
         }
         "-V" | "--version" | "version" => {
-            println!("tokensaver {}", env!("CARGO_PKG_VERSION"));
+            println!("token-saver {}", env!("CARGO_PKG_VERSION"));
             return ExitCode::SUCCESS;
         }
         "update" | "upgrade" | "self-update" => {
@@ -78,11 +78,11 @@ pub fn run() -> ExitCode {
             if args.iter().any(|a| a == "--hook" || a == "--hooks") {
                 return match init::run_hook(global) {
                     Ok(path) => {
-                        println!("tokensaver: wrote Copilot hook config at {}", path.display());
+                        println!("token-saver: wrote Copilot hook config at {}", path.display());
                         ExitCode::SUCCESS
                     }
                     Err(err) => {
-                        eprintln!("tokensaver: init failed: {err}");
+                        eprintln!("token-saver: init failed: {err}");
                         ExitCode::from(1)
                     }
                 };
@@ -96,11 +96,11 @@ pub fn run() -> ExitCode {
             };
             return match init::run(scope) {
                 Ok(path) => {
-                    println!("tokensaver: updated Copilot instructions at {}", path.display());
+                    println!("token-saver: updated Copilot instructions at {}", path.display());
                     ExitCode::SUCCESS
                 }
                 Err(err) => {
-                    eprintln!("tokensaver: init failed: {err}");
+                    eprintln!("token-saver: init failed: {err}");
                     ExitCode::from(1)
                 }
             };
@@ -110,15 +110,15 @@ pub fn run() -> ExitCode {
             if args.iter().any(|a| a == "--hook" || a == "--hooks") {
                 return match init::uninstall_hook(global) {
                     Ok(Some(path)) => {
-                        println!("tokensaver: removed Copilot hook config at {}", path.display());
+                        println!("token-saver: removed Copilot hook config at {}", path.display());
                         ExitCode::SUCCESS
                     }
                     Ok(None) => {
-                        println!("tokensaver: no Copilot hook config found");
+                        println!("token-saver: no Copilot hook config found");
                         ExitCode::SUCCESS
                     }
                     Err(err) => {
-                        eprintln!("tokensaver: uninit failed: {err}");
+                        eprintln!("token-saver: uninit failed: {err}");
                         ExitCode::from(1)
                     }
                 };
@@ -132,15 +132,15 @@ pub fn run() -> ExitCode {
             };
             return match init::uninstall(scope) {
                 Ok(Some(path)) => {
-                    println!("tokensaver: removed Copilot instructions from {}", path.display());
+                    println!("token-saver: removed Copilot instructions from {}", path.display());
                     ExitCode::SUCCESS
                 }
                 Ok(None) => {
-                    println!("tokensaver: no managed tokensaver instructions found");
+                    println!("token-saver: no managed token-saver instructions found");
                     ExitCode::SUCCESS
                 }
                 Err(err) => {
-                    eprintln!("tokensaver: uninit failed: {err}");
+                    eprintln!("token-saver: uninit failed: {err}");
                     ExitCode::from(1)
                 }
             };
@@ -202,11 +202,11 @@ fn exit_code(code: i32) -> ExitCode {
 
 /// Reads all of stdin and prints its compact form. Lets you shrink a large
 /// log or context blob before pasting it into a prompt, e.g.
-/// `Get-Content big.log | tokensaver -`.
+/// `Get-Content big.log | token-saver -`.
 fn run_stdin(extreme: bool) -> ExitCode {
     let mut text = String::new();
     if let Err(err) = io::stdin().read_to_string(&mut text) {
-        eprintln!("tokensaver: failed to read stdin: {err}");
+        eprintln!("token-saver: failed to read stdin: {err}");
         return ExitCode::from(1);
     }
     let started = Instant::now();
@@ -226,26 +226,26 @@ fn run_gain(args: &[String]) -> ExitCode {
     if args.iter().all(|arg| arg == "--reset" || arg == "reset") {
         return match metrics::reset_log() {
             Ok(metrics::ResetOutcome::Disabled) => {
-                println!("tokensaver: gain log is disabled (TOKENSAVER_LOG is off)");
+                println!("token-saver: gain log is disabled (TOKEN_SAVER_LOG is off)");
                 ExitCode::SUCCESS
             }
             Ok(metrics::ResetOutcome::AlreadyEmpty(path)) => {
-                println!("tokensaver: gain stats already empty at {}", path.display());
+                println!("token-saver: gain stats already empty at {}", path.display());
                 ExitCode::SUCCESS
             }
             Ok(metrics::ResetOutcome::Cleared(path)) => {
-                println!("tokensaver: reset gain stats at {}", path.display());
+                println!("token-saver: reset gain stats at {}", path.display());
                 ExitCode::SUCCESS
             }
             Err(err) => {
-                eprintln!("tokensaver: failed to reset gain stats: {err}");
+                eprintln!("token-saver: failed to reset gain stats: {err}");
                 ExitCode::from(1)
             }
         };
     }
 
-    eprintln!("tokensaver: unknown gain option(s): {}", args.join(" "));
-    eprintln!("usage: tokensaver gain [--reset]");
+    eprintln!("token-saver: unknown gain option(s): {}", args.join(" "));
+    eprintln!("usage: token-saver gain [--reset]");
     ExitCode::from(2)
 }
 
@@ -261,7 +261,7 @@ fn print_gain() -> ExitCode {
         0.0
     };
 
-    println!("tokensaver — token savings");
+    println!("token-saver — token savings");
     println!("  tokenizer:    {}", tokenizer::active_mode().label());
     println!("  invocations:  {}", totals.count);
     println!("  raw chars:    {}", totals.raw_chars);
@@ -290,7 +290,7 @@ fn print_gain() -> ExitCode {
 /// Calculates word counts for prompt text or file content.
 fn run_tokens(args: &[String]) -> ExitCode {
     if args.is_empty() {
-        eprintln!("tokensaver: tokens requires one of --prompt, --file, or --stdin");
+        eprintln!("token-saver: tokens requires one of --prompt, --file, or --stdin");
         return ExitCode::from(2);
     }
 
@@ -302,11 +302,11 @@ fn run_tokens(args: &[String]) -> ExitCode {
         match args[i].as_str() {
             "--prompt" | "-p" => {
                 if i + 1 >= args.len() {
-                    eprintln!("tokensaver: --prompt requires a value");
+                    eprintln!("token-saver: --prompt requires a value");
                     return ExitCode::from(2);
                 }
                 if text.is_some() {
-                    eprintln!("tokensaver: use only one source: --prompt, --file, or --stdin");
+                    eprintln!("token-saver: use only one source: --prompt, --file, or --stdin");
                     return ExitCode::from(2);
                 }
                 text = Some(args[i + 1].clone());
@@ -315,11 +315,11 @@ fn run_tokens(args: &[String]) -> ExitCode {
             }
             "--file" | "-f" => {
                 if i + 1 >= args.len() {
-                    eprintln!("tokensaver: --file requires a path");
+                    eprintln!("token-saver: --file requires a path");
                     return ExitCode::from(2);
                 }
                 if text.is_some() {
-                    eprintln!("tokensaver: use only one source: --prompt, --file, or --stdin");
+                    eprintln!("token-saver: use only one source: --prompt, --file, or --stdin");
                     return ExitCode::from(2);
                 }
                 let path = &args[i + 1];
@@ -329,7 +329,7 @@ fn run_tokens(args: &[String]) -> ExitCode {
                         source = format!("file:{path}");
                     }
                     Err(err) => {
-                        eprintln!("tokensaver: failed to read file '{path}': {err}");
+                        eprintln!("token-saver: failed to read file '{path}': {err}");
                         return ExitCode::from(1);
                     }
                 }
@@ -337,12 +337,12 @@ fn run_tokens(args: &[String]) -> ExitCode {
             }
             "--stdin" | "-" => {
                 if text.is_some() {
-                    eprintln!("tokensaver: use only one source: --prompt, --file, or --stdin");
+                    eprintln!("token-saver: use only one source: --prompt, --file, or --stdin");
                     return ExitCode::from(2);
                 }
                 let mut stdin_text = String::new();
                 if let Err(err) = io::stdin().read_to_string(&mut stdin_text) {
-                    eprintln!("tokensaver: failed to read stdin: {err}");
+                    eprintln!("token-saver: failed to read stdin: {err}");
                     return ExitCode::from(1);
                 }
                 text = Some(stdin_text);
@@ -350,21 +350,21 @@ fn run_tokens(args: &[String]) -> ExitCode {
                 i += 1;
             }
             unknown => {
-                eprintln!("tokensaver: unknown tokens option '{unknown}'");
+                eprintln!("token-saver: unknown tokens option '{unknown}'");
                 return ExitCode::from(2);
             }
         }
     }
 
     let Some(text) = text else {
-        eprintln!("tokensaver: tokens requires one of --prompt, --file, or --stdin");
+        eprintln!("token-saver: tokens requires one of --prompt, --file, or --stdin");
         return ExitCode::from(2);
     };
 
     let words = tokenizer::count_words(&text);
     let per_line_words = tokenizer::count_words_per_line(&text);
 
-    println!("tokensaver — word count");
+    println!("token-saver — word count");
     println!("  source:       {source}");
     println!("  chars:        {}", text.chars().count());
     println!("  bytes:        {}", text.len());
@@ -379,31 +379,31 @@ fn run_tokens(args: &[String]) -> ExitCode {
 }
 fn print_usage() {
     eprintln!(
-        "tokensaver — summarize command output\n\
+        "token-saver — summarize command output\n\
          \n\
          USAGE:\n\
-         \x20 tokensaver <command> [args...]      Run and print a compact summary\n\
-         \x20 tokensaver -x | --extreme <cmd>     Run and print a maximally compressed summary\n\
-         \x20 tokensaver --raw <command> ...      Run and print raw output (no summary)\n\
-         \x20 tokensaver - | --stdin             Read stdin and print its compact form\n\
-         \x20 tokensaver init [--global|--cli]   Register tokensaver with GitHub Copilot\n\
-         \x20 tokensaver init --hook [--global]  Install a Copilot postToolUse hook\n\
-         \x20 tokensaver uninit [--global|--cli] Remove what tokensaver init configured\n\
-         \x20 tokensaver uninit --hook [--global] Remove the Copilot postToolUse hook\n\
-         \x20 tokensaver hook                    Run as a Copilot postToolUse hook (reads stdin)\n\
-         \x20 tokensaver gain                    Show logged token savings\n\
-         \x20 tokensaver gain --reset            Reset logged token savings\n\
-         \x20 tokensaver optimize --file <p>     Compact file text; --preview shows it + token diff\n\
-         \x20 tokensaver context [category]      Inventory Copilot context objects + token cost\n\
-         \x20 tokensaver gallery <command>      Harvest/list/install Copilot objects; serve a browser gallery\n\
-         \x20 tokensaver update [--check|--force] Update tokensaver to the latest release\n\
-         \x20 tokensaver version | -V            Print the installed version\n\
-         \x20 tokensaver -h | --help              Show this help\n\
+         \x20 token-saver <command> [args...]      Run and print a compact summary\n\
+         \x20 token-saver -x | --extreme <cmd>     Run and print a maximally compressed summary\n\
+         \x20 token-saver --raw <command> ...      Run and print raw output (no summary)\n\
+         \x20 token-saver - | --stdin             Read stdin and print its compact form\n\
+         \x20 token-saver init [--global|--cli]   Register token-saver with GitHub Copilot\n\
+         \x20 token-saver init --hook [--global]  Install a Copilot postToolUse hook\n\
+         \x20 token-saver uninit [--global|--cli] Remove what token-saver init configured\n\
+         \x20 token-saver uninit --hook [--global] Remove the Copilot postToolUse hook\n\
+         \x20 token-saver hook                    Run as a Copilot postToolUse hook (reads stdin)\n\
+         \x20 token-saver gain                    Show logged token savings\n\
+         \x20 token-saver gain --reset            Reset logged token savings\n\
+         \x20 token-saver optimize --file <p>     Compact file text; --preview shows it + token diff\n\
+         \x20 token-saver context [category]      Inventory Copilot context objects + token cost\n\
+         \x20 token-saver gallery <command>      Harvest/list/install Copilot objects; serve a browser gallery\n\
+         \x20 token-saver update [--check|--force] Update token-saver to the latest release\n\
+         \x20 token-saver version | -V            Print the installed version\n\
+         \x20 token-saver -h | --help              Show this help\n\
          \n\
          EXAMPLES:\n\
-         \x20 tokensaver git status\n\
-         \x20 tokensaver cargo test\n\
-         \x20 tokensaver docker ps\n\
-         \x20 tokensaver kubectl get pods"
+         \x20 token-saver git status\n\
+         \x20 token-saver cargo test\n\
+         \x20 token-saver docker ps\n\
+         \x20 token-saver kubectl get pods"
     );
 }

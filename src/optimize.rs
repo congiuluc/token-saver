@@ -1,4 +1,4 @@
-//! `tokensaver optimize` — losslessly compact the *text* of a file to cut its
+//! `token-saver optimize` — losslessly compact the *text* of a file to cut its
 //! token cost, and report how many tokens the change saves.
 //!
 //! The optimization is deterministic and meaning-preserving (no model calls): it
@@ -8,7 +8,7 @@
 //! With `--preview` the optimized text and a before/after token summary are
 //! printed and **nothing is written**. Without it, the optimized text is written
 //! back to the file (or to `--out`) and the realized saving is recorded so it
-//! shows up in `tokensaver gain`.
+//! shows up in `token-saver gain`.
 
 use std::fs;
 use std::io::{self, Read};
@@ -36,10 +36,10 @@ pub fn run(args: &[String]) -> ExitCode {
         Ok(opts) => opts,
         Err(msg) => {
             if !msg.is_empty() {
-                eprintln!("tokensaver: {msg}");
+                eprintln!("token-saver: {msg}");
             }
             eprintln!(
-                "usage: tokensaver optimize (--file <path> | --stdin | --prompt <text>) \
+                "usage: token-saver optimize (--file <path> | --stdin | --prompt <text>) \
                  [--preview] [--out <path>] [--json]"
             );
             return ExitCode::from(2);
@@ -66,7 +66,7 @@ pub fn run(args: &[String]) -> ExitCode {
         if optimized == opts.text {
             // Nothing changed — avoid a pointless rewrite.
         } else if let Err(err) = fs::write(target, &optimized) {
-            eprintln!("tokensaver: failed to write '{target}': {err}");
+            eprintln!("token-saver: failed to write '{target}': {err}");
             return ExitCode::FAILURE;
         } else {
             written = Some(target.clone());
@@ -98,7 +98,7 @@ pub fn run(args: &[String]) -> ExitCode {
 
     if opts.preview {
         // Show the optimized text, then the before/after token summary.
-        println!("tokensaver — optimize preview ({})", opts.source);
+        println!("token-saver — optimize preview ({})", opts.source);
         println!("──── optimized text ────");
         print!("{optimized}");
         if !optimized.ends_with('\n') {
@@ -106,9 +106,9 @@ pub fn run(args: &[String]) -> ExitCode {
         }
         println!("──── summary ────");
     } else if let Some(path) = &written {
-        println!("tokensaver — optimized {} → {path}", opts.source);
+        println!("token-saver — optimized {} → {path}", opts.source);
     } else if write_target.is_some() {
-        println!("tokensaver — already optimal ({})", opts.source);
+        println!("token-saver — already optimal ({})", opts.source);
     } else {
         // No file to write (stdin/prompt without --out): act as a filter and emit
         // the optimized text to stdout, with the summary going to stderr below.
@@ -141,7 +141,7 @@ pub fn run(args: &[String]) -> ExitCode {
     // so keep the summary on stderr to avoid corrupting a piped result.
     let summary_to_stderr = !opts.preview && write_target.is_none();
     if summary_to_stderr {
-        eprintln!("tokensaver — optimize summary ({})", opts.source);
+        eprintln!("token-saver — optimize summary ({})", opts.source);
         eprintln!("{summary}");
     } else {
         println!("{summary}");

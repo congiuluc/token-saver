@@ -1,4 +1,4 @@
-# tokensaver
+# token-saver
 
 ![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Built with Rust](https://img.shields.io/badge/built%20with-Rust-dea584.svg?logo=rust&logoColor=white)
@@ -14,7 +14,7 @@ summary of its output — no AI, no network, just deterministic parsing and
 heuristic compression. Typical output is 60–90% smaller than the original.
 
 ```text
-$ tokensaver git status
+$ token-saver git status
 * master...origin/master
 ~ 3  index.html, src/main.rs, src/config.rs
 ? 2  .fastembed_cache/, tests/
@@ -27,7 +27,7 @@ $ tokensaver git status
 - Community docs: [Code of Conduct](CODE_OF_CONDUCT.md), [Contributing](CONTRIBUTING.md), [Security](SECURITY.md), [Support](SUPPORT.md)
 - Changelog: [CHANGELOG.md](CHANGELOG.md)
 - Documentation website source: [`docs/`](docs/)
-- Documentation website (GitHub Pages): `https://congiuluc.github.io/TokenSaver/`
+- Documentation website (GitHub Pages): `https://congiuluc.github.io/token-saver/`
 
 ## Contents
 
@@ -42,7 +42,7 @@ $ tokensaver git status
 
 ## Description
 
-`tokensaver <command> [args...]` executes the command exactly as given, captures its
+`token-saver <command> [args...]` executes the command exactly as given, captures its
 output, and then renders a compact summary. It works in two layers:
 
 1. **Per-command formatters** — purpose-built parsers that know the structure of
@@ -63,7 +63,7 @@ output, and then renders a compact summary. It works in two layers:
    scripts, build tools, arbitrary executables) the output is cleaned of ANSI
    escape codes, blank-line runs are collapsed, and consecutive duplicate lines
    are folded into a single line with a `(xN)` counter. If the result still fits
-   in a small budget it is passed through unchanged; otherwise `tokensaver` switches
+   in a small budget it is passed through unchanged; otherwise `token-saver` switches
    to **signal extraction**:
 
    - Lines that look like **errors** (`error`, `fatal`, `panic`, `exception`,
@@ -99,20 +99,20 @@ A few commands are transparently rewritten to a machine-readable variant for
 reliable parsing (e.g. `git status` runs `git status --porcelain=v1 --branch`
 under the hood). Use `--raw` to bypass all of this.
 
-The original command's exit code is always propagated, so `tokensaver` is safe to use
+The original command's exit code is always propagated, so `token-saver` is safe to use
 in scripts and pipelines.
 
 ## How it works
 
 ### Pipeline
 
-Every `tokensaver <command>` invocation flows through the same dependency-free
+Every `token-saver <command>` invocation flows through the same dependency-free
 pipeline. Nothing is sent over the network (telemetry excepted, and only when you
 opt in), and the child process sees exactly the command you typed.
 
 ```mermaid
 flowchart LR
-    A["tokensaver &lt;command&gt;"] --> B["rewrite()<br/>machine-readable variant"]
+    A["token-saver &lt;command&gt;"] --> B["rewrite()<br/>machine-readable variant"]
     B --> C["runner::run<br/>spawn child, capture<br/>stdout / stderr / code"]
     C --> D["format::summarize<br/>route to formatter"]
     D -->|known command| E["per-command formatter"]
@@ -131,7 +131,7 @@ flowchart LR
 3. **`format::summarize`** normalizes the command to a base name (so `./gradlew`,
    `gradlew.bat`, and `/usr/bin/dotnet` all match), then dispatches to the most
    specific formatter, falling back to the generic compressor.
-4. **Accounting** records token counts to `~/.tokensaver/metrics.jsonl` and, when
+4. **Accounting** records token counts to `~/.token-saver/metrics.jsonl` and, when
    enabled, emits an OpenTelemetry span. Both are best-effort and never fail the command.
 5. The summary is printed and the **child's exit code is propagated** unchanged.
 
@@ -157,14 +157,14 @@ flowchart LR
 | [`src/format/container.rs`](src/format/container.rs) | `docker ps` and `kubectl get`. |
 | [`src/format/table.rs`](src/format/table.rs) | Shared helpers for compacting tabular output. |
 | [`src/tokenizer.rs`](src/tokenizer.rs) | Token-counting backends (`gpt5`, `o200k`, `cl100k`, `heuristic`). |
-| [`src/metrics.rs`](src/metrics.rs) | JSONL gain logging and the `tokensaver gain` report. |
-| [`src/optimize.rs`](src/optimize.rs) | The `tokensaver optimize` text compactor (preview + apply, token-diff summary). |
-| [`src/assess.rs`](src/assess.rs) | The `tokensaver context` Copilot context inventory (parallel scan, token accounting, Markdown/JSON export). |
-| [`src/gallery.rs`](src/gallery.rs) | The `tokensaver gallery` marketplace: harvest, list, install, remove, and a localhost browser UI. |
-| [`src/update.rs`](src/update.rs) | The `tokensaver update` self-updater (GitHub Releases, checksum verify, in-place replace). |
+| [`src/metrics.rs`](src/metrics.rs) | JSONL gain logging and the `token-saver gain` report. |
+| [`src/optimize.rs`](src/optimize.rs) | The `token-saver optimize` text compactor (preview + apply, token-diff summary). |
+| [`src/assess.rs`](src/assess.rs) | The `token-saver context` Copilot context inventory (parallel scan, token accounting, Markdown/JSON export). |
+| [`src/gallery.rs`](src/gallery.rs) | The `token-saver gallery` marketplace: harvest, list, install, remove, and a localhost browser UI. |
+| [`src/update.rs`](src/update.rs) | The `token-saver update` self-updater (GitHub Releases, checksum verify, in-place replace). |
 | [`src/otel.rs`](src/otel.rs) | Optional OpenTelemetry / OTLP span export. |
 | [`src/init.rs`](src/init.rs) | `init` / `uninit` for Copilot instructions, `AGENTS.md`, and hooks. |
-| [`src/hook.rs`](src/hook.rs) | The `tokensaver hook` `postToolUse` handler. |
+| [`src/hook.rs`](src/hook.rs) | The `token-saver hook` `postToolUse` handler. |
 | [`tests/cli.rs`](tests/cli.rs) | End-to-end CLI integration tests. |
 
 ### Formatter reference
@@ -205,38 +205,38 @@ back to the generic compressor, so output is never lost.
 
 ## Installation
 
-`tokensaver` runs on **Windows, Linux, and macOS** (x86_64 and arm64). Pick the
+`token-saver` runs on **Windows, Linux, and macOS** (x86_64 and arm64). Pick the
 option that suits you — prebuilt binaries (no toolchain required), `cargo install`,
 or building from source.
 
 ### Quick install (prebuilt binaries)
 
 These one-liners download the right prebuilt archive for your platform from the
-[latest GitHub release](https://github.com/congiuluc/TokenSaver/releases/latest),
-verify its checksum, and install the `tokensaver` and `ts` binaries onto your `PATH`.
+[latest GitHub release](https://github.com/congiuluc/token-saver/releases/latest),
+verify its checksum, and install the `token-saver` and `ts` binaries onto your `PATH`.
 
 **Linux / macOS** (installs to `~/.local/bin`):
 
 ```sh
-curl -fsSL https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/congiuluc/token-saver/main/install.sh | sh
 ```
 
-**Windows** (PowerShell; installs to `%LOCALAPPDATA%\Programs\tokensaver`):
+**Windows** (PowerShell; installs to `%LOCALAPPDATA%\Programs\token-saver`):
 
 ```powershell
-irm https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/congiuluc/token-saver/main/install.ps1 | iex
 ```
 
 To pin a specific version, set the version before running the installer:
 
 ```sh
 # Linux / macOS
-TOKENSAVER_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.sh | sh
+TOKEN_SAVER_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/congiuluc/token-saver/main/install.sh | sh
 ```
 
 ```powershell
 # Windows
-$env:TOKENSAVER_VERSION = "v0.1.0"; irm https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.ps1 | iex
+$env:TOKEN_SAVER_VERSION = "v0.1.0"; irm https://raw.githubusercontent.com/congiuluc/token-saver/main/install.ps1 | iex
 ```
 
 > Prefer to inspect scripts before running them? Download
@@ -248,10 +248,10 @@ If you have the [Rust toolchain](https://rustup.rs/), install straight from the
 repository (works on every platform):
 
 ```sh
-cargo install --git https://github.com/congiuluc/TokenSaver
+cargo install --git https://github.com/congiuluc/token-saver
 ```
 
-This builds and copies the `tokensaver` and `ts` binaries into your Cargo bin
+This builds and copies the `token-saver` and `ts` binaries into your Cargo bin
 directory (`~/.cargo/bin`), which `rustup` already puts on your `PATH`.
 
 ### Build from source
@@ -265,7 +265,7 @@ This uses the size-optimized release profile (`opt-level="z"`, `lto`, `strip`)
 and produces small standalone executables at:
 
 ```text
-target/release/tokensaver(.exe)   # main binary
+target/release/token-saver(.exe)   # main binary
 target/release/ts(.exe)           # short alias
 ```
 
@@ -276,80 +276,80 @@ Then copy the binary somewhere on your `PATH`:
 
 ```sh
 # Linux / macOS
-install -m 0755 target/release/tokensaver ~/.local/bin/
+install -m 0755 target/release/token-saver ~/.local/bin/
 install -m 0755 target/release/ts ~/.local/bin/
 ```
 
 ```powershell
 # Windows (PowerShell)
-Copy-Item target\release\tokensaver.exe, target\release\ts.exe "$env:USERPROFILE\.cargo\bin\"
+Copy-Item target\release\token-saver.exe, target\release\ts.exe "$env:USERPROFILE\.cargo\bin\"
 ```
 
 ### Verify the install
 
 ```sh
-tokensaver --help
+token-saver --help
 ```
 
 ## Usage
 
 ```text
-tokensaver <command> [args...]      Run and print a compact summary
-tokensaver -x | --extreme <cmd>     Run and print a maximally compressed summary
-tokensaver --raw <command> ...      Run and print raw output (no summary)
-tokensaver - | --stdin              Read stdin and print its compact form
-tokensaver init [--global|--cli]    Register tokensaver with GitHub Copilot
-tokensaver init --hook [--global]   Install a Copilot postToolUse hook
-tokensaver uninit [--global|--cli]  Remove what tokensaver init configured
-tokensaver uninit --hook [--global] Remove the Copilot postToolUse hook
-tokensaver hook                     Run as a Copilot postToolUse hook (reads stdin)
-tokensaver gain                     Show logged token savings
-tokensaver gain --reset             Reset logged token savings
-tokensaver tokens --prompt <text>   Count words for inline prompt text
-tokensaver tokens --file <path>     Count words for file content
-tokensaver tokens --stdin           Read stdin and count words
-tokensaver optimize --file <path>   Compact a file's text + report token savings
-tokensaver context [category]       Inventory Copilot context objects + token cost
-tokensaver gallery <command>        Harvest/list/install Copilot objects; serve a browser gallery
-tokensaver update [--check|--force] Update tokensaver to the latest release
-tokensaver version | -V             Print the installed version
-tokensaver -h | --help              Show help
+token-saver <command> [args...]      Run and print a compact summary
+token-saver -x | --extreme <cmd>     Run and print a maximally compressed summary
+token-saver --raw <command> ...      Run and print raw output (no summary)
+token-saver - | --stdin              Read stdin and print its compact form
+token-saver init [--global|--cli]    Register token-saver with GitHub Copilot
+token-saver init --hook [--global]   Install a Copilot postToolUse hook
+token-saver uninit [--global|--cli]  Remove what token-saver init configured
+token-saver uninit --hook [--global] Remove the Copilot postToolUse hook
+token-saver hook                     Run as a Copilot postToolUse hook (reads stdin)
+token-saver gain                     Show logged token savings
+token-saver gain --reset             Reset logged token savings
+token-saver tokens --prompt <text>   Count words for inline prompt text
+token-saver tokens --file <path>     Count words for file content
+token-saver tokens --stdin           Read stdin and count words
+token-saver optimize --file <path>   Compact a file's text + report token savings
+token-saver context [category]       Inventory Copilot context objects + token cost
+token-saver gallery <command>        Harvest/list/install Copilot objects; serve a browser gallery
+token-saver update [--check|--force] Update token-saver to the latest release
+token-saver version | -V             Print the installed version
+token-saver -h | --help              Show help
 ```
 
 ### Check for updates and self-update (`update`)
 
-`tokensaver update` checks the
-[GitHub Releases](https://github.com/congiuluc/TokenSaver/releases) for a newer
+`token-saver update` checks the
+[GitHub Releases](https://github.com/congiuluc/token-saver/releases) for a newer
 version and, if one exists, downloads the prebuilt archive for your platform,
-verifies its SHA-256 checksum, and replaces the running `tokensaver` (and the
+verifies its SHA-256 checksum, and replaces the running `token-saver` (and the
 sibling `ts` alias) in place. It reuses the system's `curl`/`wget` or PowerShell,
 so no extra runtime dependency is added.
 
 ```text
-tokensaver version                  Print the installed version
-tokensaver update                   Check for and install the latest version
-tokensaver update --check           Only report whether a newer version exists
-tokensaver update --force           Reinstall the latest version even if up to date
+token-saver version                  Print the installed version
+token-saver update                   Check for and install the latest version
+token-saver update --check           Only report whether a newer version exists
+token-saver update --force           Reinstall the latest version even if up to date
 ```
 
 ```text
-$ tokensaver update
-tokensaver: current version v0.1.0
-tokensaver: checking congiuluc/TokenSaver for the latest release...
-tokensaver: new version available: v0.1.0 -> v0.2.0
-tokensaver: downloading tokensaver-x86_64-unknown-linux-gnu.tar.gz...
-tokensaver: checksum verified.
-tokensaver: extracting...
-tokensaver: updated to v0.2.0 at /home/user/.local/bin/tokensaver
+$ token-saver update
+token-saver: current version v0.1.0
+token-saver: checking congiuluc/token-saver for the latest release...
+token-saver: new version available: v0.1.0 -> v0.2.0
+token-saver: downloading token-saver-x86_64-unknown-linux-gnu.tar.gz...
+token-saver: checksum verified.
+token-saver: extracting...
+token-saver: updated to v0.2.0 at /home/user/.local/bin/token-saver
 ```
 
 > If you installed via a system package manager or `cargo install`, prefer
-> updating the same way. `tokensaver update` replaces the binary at its current
+> updating the same way. `token-saver update` replaces the binary at its current
 > location, which requires write permission to that directory.
 
 ### Optimize a file's text (`optimize`)
 
-`tokensaver optimize` losslessly compacts the *text* of a file to cut its token
+`token-saver optimize` losslessly compacts the *text* of a file to cut its token
 cost. The transformation is deterministic and meaning-preserving (no model
 calls): it normalizes line endings, strips trailing whitespace, collapses
 repeated inner whitespace (keeping leading indentation) and runs of blank lines,
@@ -358,15 +358,15 @@ and trims leading/trailing blank lines.
 With `--preview` it prints the optimized text plus a before/after token summary
 and **writes nothing** — re-run without `--preview` to apply the change in place
 (or send it elsewhere with `--out`). Applied optimizations are recorded so they
-show up in `tokensaver gain`.
+show up in `token-saver gain`.
 
 ```text
-tokensaver optimize --file <path>           Rewrite the file in place, print savings
-tokensaver optimize --file <path> --preview Show optimized text + token diff (no write)
-tokensaver optimize --file <path> --out <p> Write the optimized text to another path
-tokensaver optimize --stdin                 Read stdin, emit optimized text to stdout
-tokensaver optimize --prompt "<text>"       Optimize inline text
-tokensaver optimize --file <path> --json    Emit machine-readable JSON
+token-saver optimize --file <path>           Rewrite the file in place, print savings
+token-saver optimize --file <path> --preview Show optimized text + token diff (no write)
+token-saver optimize --file <path> --out <p> Write the optimized text to another path
+token-saver optimize --stdin                 Read stdin, emit optimized text to stdout
+token-saver optimize --prompt "<text>"       Optimize inline text
+token-saver optimize --file <path> --json    Emit machine-readable JSON
 ```
 
 The summary reports the active tokenizer, before/after token counts, tokens
@@ -374,7 +374,7 @@ saved (with percentage), character counts and line counts.
 
 ### Inventory Copilot context (`context`)
 
-`tokensaver context` walks the current workspace **and** your whole device to find
+`token-saver context` walks the current workspace **and** your whole device to find
 the GitHub Copilot context objects the agent can load — custom instructions
 (`copilot-instructions.md`, `AGENTS.md`, `*.instructions.md`), prompt files
 (`*.prompt.md`), agents / chat modes (`*.agent.md`, `*.chatmode.md`), skills
@@ -390,15 +390,15 @@ device-wide scan runs in parallel across all available cores and prints progress
 to stderr.
 
 ```text
-tokensaver context                  Inventory workspace + device
-tokensaver context agents           Limit to one category (also: -c/--category)
-tokensaver context --workspace      Scan only the current workspace (-w)
-tokensaver context --user           Scan only user/device locations (-u)
-tokensaver context --top N          Show the N largest consumers (default 5)
-tokensaver context --window N       Context window used for budget % (default 128000)
-tokensaver context --md <file>      Export the report to a Markdown file (-o/--out)
-tokensaver context --json           Emit machine-readable JSON
-tokensaver context --quiet          Suppress progress messages (-q)
+token-saver context                  Inventory workspace + device
+token-saver context agents           Limit to one category (also: -c/--category)
+token-saver context --workspace      Scan only the current workspace (-w)
+token-saver context --user           Scan only user/device locations (-u)
+token-saver context --top N          Show the N largest consumers (default 5)
+token-saver context --window N       Context window used for budget % (default 128000)
+token-saver context --md <file>      Export the report to a Markdown file (-o/--out)
+token-saver context --json           Emit machine-readable JSON
+token-saver context --quiet          Suppress progress messages (-q)
 ```
 
 Categories accept singular or plural, case-insensitively: `instructions`,
@@ -406,11 +406,11 @@ Categories accept singular or plural, case-insensitively: `instructions`,
 
 ### Gallery / marketplace (`gallery`)
 
-`tokensaver gallery` is a local marketplace for your **user-defined** Copilot
+`token-saver gallery` is a local marketplace for your **user-defined** Copilot
 context objects. It harvests the agents, skills, prompts and custom instructions
 you authored out of your user/device folders (`~/.copilot`, `~/.agents`, the VS
 Code `User/prompts` folder, and home-level `AGENTS.md` /
-`copilot-instructions.md`) into a gallery at `~/.tokensaver/gallery`, so they are
+`copilot-instructions.md`) into a gallery at `~/.token-saver/gallery`, so they are
 preserved in one place and can be reinstalled into any workspace on demand.
 Objects provided by VS Code extensions or the installed app are **never**
 harvested.
@@ -420,14 +420,14 @@ default** — it prints exactly what it would move and changes nothing until you
 re-run with `--apply`.
 
 ```text
-tokensaver gallery harvest                 Dry run: list user objects that would be moved
-tokensaver gallery harvest --apply         Move them into the gallery (removes originals)
-tokensaver gallery list [category]         List stored items (optionally by category)
-tokensaver gallery show <id>               Show details and a content preview
-tokensaver gallery install <id> [--dir <p>] [--force]
+token-saver gallery harvest                 Dry run: list user objects that would be moved
+token-saver gallery harvest --apply         Move them into the gallery (removes originals)
+token-saver gallery list [category]         List stored items (optionally by category)
+token-saver gallery show <id>               Show details and a content preview
+token-saver gallery install <id> [--dir <p>] [--force]
                                            Install an item into a workspace (default: cwd)
-tokensaver gallery remove <id>             Delete an item from the gallery
-tokensaver gallery serve [--port N] [--open]   Browse and install from http://127.0.0.1:7878
+token-saver gallery remove <id>             Delete an item from the gallery
+token-saver gallery serve [--port N] [--open]   Browse and install from http://127.0.0.1:7878
 ```
 
 Installing an item places it at the standard Copilot path for its category:
@@ -441,59 +441,59 @@ localhost-only web UI to browse items and install them into a folder you choose.
 ### Examples
 
 ```powershell
-tokensaver git status
-tokensaver git log
-tokensaver git diff
-tokensaver cargo test
-tokensaver docker ps
-tokensaver kubectl get pods
-tokensaver npm install
-tokensaver python -m pytest
-tokensaver ./build.ps1            # unknown command -> generic compression
-tokensaver -x ./build.ps1         # extreme mode -> errors + stats footer only
-Get-Content big.log | tokensaver -   # summarize piped text (e.g. before pasting into a prompt)
-tokensaver tokens --prompt "Summarize this error log"
-tokensaver tokens --file README.md
-Get-Content build.log | tokensaver tokens --stdin
+token-saver git status
+token-saver git log
+token-saver git diff
+token-saver cargo test
+token-saver docker ps
+token-saver kubectl get pods
+token-saver npm install
+token-saver python -m pytest
+token-saver ./build.ps1            # unknown command -> generic compression
+token-saver -x ./build.ps1         # extreme mode -> errors + stats footer only
+Get-Content big.log | token-saver -   # summarize piped text (e.g. before pasting into a prompt)
+token-saver tokens --prompt "Summarize this error log"
+token-saver tokens --file README.md
+Get-Content build.log | token-saver tokens --stdin
 ```
 
 ## Integrate with GitHub Copilot
 
-`tokensaver init` registers `tokensaver` with GitHub Copilot by writing a small managed
+`token-saver init` registers `token-saver` with GitHub Copilot by writing a small managed
 block into a [`copilot-instructions.md`](https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions)
 file. Copilot prepends that file to every request, so the agent learns to prefix
-shell commands with `tokensaver` — routing tool/prompt commands through
-tokensaver and cutting token usage automatically.
+shell commands with `token-saver` — routing tool/prompt commands through
+token-saver and cutting token usage automatically.
 
 ```powershell
-tokensaver init             # workspace scope -> .github/copilot-instructions.md
-tokensaver init --global    # all workspaces -> ~/.copilot/copilot-instructions.md
-tokensaver init --cli       # Copilot CLI / agents -> ./AGENTS.md
+token-saver init             # workspace scope -> .github/copilot-instructions.md
+token-saver init --global    # all workspaces -> ~/.copilot/copilot-instructions.md
+token-saver init --cli       # Copilot CLI / agents -> ./AGENTS.md
 ```
 
 The `.github/copilot-instructions.md` file is read by both Copilot in the editor
 and the Copilot CLI. `--cli` (alias `--agents`) instead writes the repo-root
 `AGENTS.md` agent file, the cross-tool format the Copilot CLI and other agents
-pick up. The block is delimited by `<!-- tokensaver-instructions v1 -->` markers, so
-re-running `tokensaver init` refreshes it in place without touching the rest of the
+pick up. The block is delimited by `<!-- token-saver-instructions v1 -->` markers, so
+re-running `token-saver init` refreshes it in place without touching the rest of the
 file. Reload the Copilot window (or start a new chat / CLI session) afterwards so
 the updated instructions are picked up.
 
 ### Automatic compression with a hook
 
-The instruction block only *asks* the agent to type `tokensaver`. For deterministic,
+The instruction block only *asks* the agent to type `token-saver`. For deterministic,
 automatic compression — no model cooperation required — install a Copilot
 [`postToolUse` hook](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-hooks-reference).
 Copilot runs the hook after every tool and lets it replace the tool's result, so
 shell output is compressed before the model ever sees it.
 
 ```powershell
-tokensaver init --hook            # repo scope  -> .github/hooks/tokensaver.json
-tokensaver init --hook --global   # all repos    -> ~/.copilot/hooks/tokensaver.json
+token-saver init --hook            # repo scope  -> .github/hooks/token-saver.json
+token-saver init --hook --global   # all repos    -> ~/.copilot/hooks/token-saver.json
 ```
 
-This registers `tokensaver hook` as the handler. Because `postToolUse` fires after
-*every* tool and has no `matcher`, `tokensaver hook` itself only rewrites results from
+This registers `token-saver hook` as the handler. Because `postToolUse` fires after
+*every* tool and has no `matcher`, `token-saver hook` itself only rewrites results from
 the `bash` and `powershell` tools, and only when compression actually shrinks the
 output — otherwise it returns `{}` and Copilot keeps the original result. The
 hook reads the payload on stdin and emits a `modifiedResult` JSON object, so it
@@ -502,17 +502,17 @@ cloud agent.
 
 ### Removing the integration
 
-`tokensaver uninit` reverses `tokensaver init`, taking the same scope flags. It strips only
-the managed block (between the `<!-- tokensaver-instructions v1 -->` markers), leaving
+`token-saver uninit` reverses `token-saver init`, taking the same scope flags. It strips only
+the managed block (between the `<!-- token-saver-instructions v1 -->` markers), leaving
 any other content in the file untouched; if that leaves the file empty it is
-deleted. With `--hook` it removes the generated `tokensaver.json` hook config instead.
+deleted. With `--hook` it removes the generated `token-saver.json` hook config instead.
 
 ```powershell
-tokensaver uninit                  # workspace scope -> .github/copilot-instructions.md
-tokensaver uninit --global         # all workspaces -> ~/.copilot/copilot-instructions.md
-tokensaver uninit --cli            # Copilot CLI / agents -> ./AGENTS.md
-tokensaver uninit --hook           # repo hook  -> .github/hooks/tokensaver.json
-tokensaver uninit --hook --global  # global hook -> ~/.copilot/hooks/tokensaver.json
+token-saver uninit                  # workspace scope -> .github/copilot-instructions.md
+token-saver uninit --global         # all workspaces -> ~/.copilot/copilot-instructions.md
+token-saver uninit --cli            # Copilot CLI / agents -> ./AGENTS.md
+token-saver uninit --hook           # repo hook  -> .github/hooks/token-saver.json
+token-saver uninit --hook --global  # global hook -> ~/.copilot/hooks/token-saver.json
 ```
 
 ### Summarizing prompts
@@ -524,25 +524,25 @@ shrink a large blob *before* it becomes part of a prompt, pipe it through the
 stdin filter and paste the result:
 
 ```powershell
-Get-Content huge.log | tokensaver -        # condense a log before pasting
-somecommand | tokensaver -x -              # extreme compression of piped output
+Get-Content huge.log | token-saver -        # condense a log before pasting
+somecommand | token-saver -x -              # extreme compression of piped output
 ```
 
 ### Word counting for prompts or files
 
-Use `tokensaver tokens` when you want word counts (spaces ignored) and a per-line
+Use `token-saver tokens` when you want word counts (spaces ignored) and a per-line
 breakdown without running a command through the summarizer.
 
 ```powershell
-tokensaver tokens --prompt "Write a concise summary of this deployment error"
-tokensaver tokens --file docs/design.md
-Get-Content logs/build.log | tokensaver tokens --stdin
+token-saver tokens --prompt "Write a concise summary of this deployment error"
+token-saver tokens --file docs/design.md
+Get-Content logs/build.log | token-saver tokens --stdin
 ```
 
 Example output:
 
 ```text
-tokensaver — word count
+token-saver — word count
   source:       prompt
   chars:        56
   bytes:        56
@@ -554,10 +554,10 @@ tokensaver — word count
 
 ## Token accounting
 
-Every tokensaver run (a `tokensaver <command>` run, the stdin filter, or a `tokensaver hook`
+Every token-saver run (a `token-saver <command>` run, the stdin filter, or a `token-saver hook`
 compression) is logged so you can see how many tokens it saves.
 
-`TOKENSAVER_TOKENIZER` controls the active token counter used for primary totals:
+`TOKEN_SAVER_TOKENIZER` controls the active token counter used for primary totals:
 
 - `gpt5` (default): OpenAI-style BPE using the `o200k` encoding family
 - `o200k`: near-real OpenAI-style BPE (GPT-4o/GPT-5 compatible encoding family)
@@ -567,37 +567,37 @@ compression) is logged so you can see how many tokens it saves.
 PowerShell examples:
 
 ```powershell
-$env:TOKENSAVER_TOKENIZER = "heuristic"
-tokensaver gain
+$env:TOKEN_SAVER_TOKENIZER = "heuristic"
+token-saver gain
 
-$env:TOKENSAVER_TOKENIZER = "gpt5"
-tokensaver git status
-tokensaver gain
+$env:TOKEN_SAVER_TOKENIZER = "gpt5"
+token-saver git status
+token-saver gain
 
-$env:TOKENSAVER_TOKENIZER = "o200k"
-tokensaver cargo test
-tokensaver gain
+$env:TOKEN_SAVER_TOKENIZER = "o200k"
+token-saver cargo test
+token-saver gain
 ```
 
-Alongside the active totals, tokensaver also records heuristic and model counts
-separately so you can compare them directly in `tokensaver gain`.
+Alongside the active totals, token-saver also records heuristic and model counts
+separately so you can compare them directly in `token-saver gain`.
 
-Records are appended as JSON Lines to `~/.tokensaver/metrics.jsonl` by default. Each
+Records are appended as JSON Lines to `~/.token-saver/metrics.jsonl` by default. Each
 line looks like:
 
 ```json
 {"ts":1718200000000,"mode":"run","cmd":"git status","tokenizer":"cl100k","modelTokensPresent":1,"rawTokens":420,"outTokens":85,"rawTokensHeuristic":435,"outTokensHeuristic":90,"rawTokensModel":420,"outTokensModel":85,"rawBytes":1680,"outBytes":340}
 ```
 
-Set the `TOKENSAVER_LOG` environment variable to write somewhere else, or to `off`
+Set the `TOKEN_SAVER_LOG` environment variable to write somewhere else, or to `off`
 (also `0` or empty) to disable logging entirely. Logging never fails a command —
 any I/O error while recording is silently ignored.
 
-View the running totals with `tokensaver gain`:
+View the running totals with `token-saver gain`:
 
 ```powershell
-tokensaver gain
-# tokensaver — token savings
+token-saver gain
+# token-saver — token savings
 #   tokenizer:    gpt5
 #   invocations:  128
 #   raw chars:    216840
@@ -613,14 +613,14 @@ tokensaver gain
 #   model saved:            44336 (81.8%)
 
 # Reset persisted gain stats
-tokensaver gain --reset
-# tokensaver: reset gain stats at C:\Users\you\.tokensaver\metrics.jsonl
+token-saver gain --reset
+# token-saver: reset gain stats at C:\Users\you\.token-saver\metrics.jsonl
 ```
 
 Notes:
 
 - `raw tokens` / `out tokens` / `saved` always reflect the active
-  `TOKENSAVER_TOKENIZER` mode.
+  `TOKEN_SAVER_TOKENIZER` mode.
 - `model tokens: n/a` means no model-token records have been logged yet
   (for example, all existing log lines were recorded in `heuristic` mode).
 - `(<N> samples)` under model totals counts only records that included model
@@ -628,7 +628,7 @@ Notes:
 
 ## OpenTelemetry export
 
-In addition to the JSONL gain log, every tokensaver event (a `run`, a `stdin`
+In addition to the JSONL gain log, every token-saver event (a `run`, a `stdin`
 filter, or a `hook` compression) can be exported as an OpenTelemetry **span**
 describing how much the output shrank. The exporter is dependency-free and built
 on `std` only, so it speaks plain HTTP/1.1 and cannot terminate TLS itself —
@@ -638,30 +638,30 @@ all accounting, every failure is swallowed so telemetry never affects the comman
 Export is **off by default** and has two independent, opt-in sinks:
 
 - **Local file** — appends each span as OTLP JSON (one document per line) to
-  `~/.tokensaver/traces.jsonl`.
+  `~/.token-saver/traces.jsonl`.
 - **OTLP/HTTP** — POSTs the span as OTLP JSON to `<endpoint>/v1/traces`.
 
-It becomes active when `TOKENSAVER_OTEL` is truthy (anything other than
+It becomes active when `TOKEN_SAVER_OTEL` is truthy (anything other than
 `off` / `0` / empty) **or** when an OTLP endpoint is configured.
 
 | Variable | Purpose |
 | -------- | ------- |
-| `TOKENSAVER_OTEL` | Master switch. Truthy enables export; `off` / `0` / empty disables it. |
-| `TOKENSAVER_OTEL_FILE` | Override the local trace file path, or set `off` / `0` / empty to disable the file sink. |
+| `TOKEN_SAVER_OTEL` | Master switch. Truthy enables export; `off` / `0` / empty disables it. |
+| `TOKEN_SAVER_OTEL_FILE` | Override the local trace file path, or set `off` / `0` / empty to disable the file sink. |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | Base OTLP endpoint; the span is sent to `<endpoint>/v1/traces`. Setting this also enables export. |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Traces-specific endpoint override (takes precedence over the base endpoint). |
-| `OTEL_SERVICE_NAME` | Service name reported on the span (default `tokensaver`). |
+| `OTEL_SERVICE_NAME` | Service name reported on the span (default `token-saver`). |
 
 ```powershell
 # Local file sink only
-$env:TOKENSAVER_OTEL = "1"
-tokensaver cargo test
-Get-Content "$env:USERPROFILE\.tokensaver\traces.jsonl" -Tail 1
+$env:TOKEN_SAVER_OTEL = "1"
+token-saver cargo test
+Get-Content "$env:USERPROFILE\.token-saver\traces.jsonl" -Tail 1
 
 # Ship to a local OpenTelemetry Collector (which can forward over TLS)
 $env:OTEL_EXPORTER_OTLP_ENDPOINT = "http://localhost:4318"
-$env:OTEL_SERVICE_NAME = "tokensaver"
-tokensaver git status
+$env:OTEL_SERVICE_NAME = "token-saver"
+token-saver git status
 ```
 
 Each span carries the invocation `mode` (`run` / `stdin` / `hook`), the command
@@ -670,14 +670,14 @@ wall-clock duration of the run.
 
 ## Development
 
-`tokensaver` is a single Rust crate with **no runtime dependencies** beyond
+`token-saver` is a single Rust crate with **no runtime dependencies** beyond
 [`tiktoken-rs`](https://crates.io/crates/tiktoken-rs) (used for near-real token
 counting). The release profile is tuned for size (`opt-level = "z"`, `lto`,
 `strip`, `panic = "abort"`).
 
 ```powershell
-cargo build              # debug build -> target\debug\tokensaver.exe
-cargo build --release    # size-optimized build -> target\release\tokensaver.exe
+cargo build              # debug build -> target\debug\token-saver.exe
+cargo build --release    # size-optimized build -> target\release\token-saver.exe
 cargo test               # run the full suite (unit + CLI integration tests)
 cargo fmt                # format
 cargo clippy             # lint
@@ -706,30 +706,30 @@ can be tuned without touching any formatter.
 
 ## OpenTelemetry
 
-Every tokensaver run can also be exported as an OpenTelemetry **span**, so you can
+Every token-saver run can also be exported as an OpenTelemetry **span**, so you can
 track compression in your existing observability stack. Export is built on the
 standard library only and is disabled by default.
 
-Enable it by setting `TOKENSAVER_OTEL` to anything other than `off`/`0`/empty, or by
+Enable it by setting `TOKEN_SAVER_OTEL` to anything other than `off`/`0`/empty, or by
 configuring an OTLP endpoint. Two sinks are available, and both can run at once:
 
 - **Local span file** — when OpenTelemetry is enabled, each span is appended as
-  an OTLP JSON document (one per line) to `~/.tokensaver/traces.jsonl`. Override the
-  path with `TOKENSAVER_OTEL_FILE`, or disable the file with `off`/`0`/empty.
+  an OTLP JSON document (one per line) to `~/.token-saver/traces.jsonl`. Override the
+  path with `TOKEN_SAVER_OTEL_FILE`, or disable the file with `off`/`0`/empty.
 - **OTLP/HTTP** — when `OTEL_EXPORTER_OTLP_ENDPOINT` is set, the span is POSTed
   as OTLP JSON to `<endpoint>/v1/traces`. Use
   `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` to supply a full traces URL directly.
 
 ```powershell
-$env:TOKENSAVER_OTEL = "1"
+$env:TOKEN_SAVER_OTEL = "1"
 $env:OTEL_EXPORTER_OTLP_ENDPOINT = "http://localhost:4318"
-$env:OTEL_SERVICE_NAME = "tokensaver"   # optional; defaults to "tokensaver"
-tokensaver git status
+$env:OTEL_SERVICE_NAME = "token-saver"   # optional; defaults to "token-saver"
+token-saver git status
 ```
 
-Each span is named `tokensaver.<mode>` (`run`, `stdin`, or `hook`) and carries
-`tokensaver.command`, `tokensaver.raw_tokens`, `tokensaver.out_tokens`, `tokensaver.saved_tokens`,
-`tokensaver.raw_bytes` and `tokensaver.out_bytes` attributes.
+Each span is named `token-saver.<mode>` (`run`, `stdin`, or `hook`) and carries
+`token-saver.command`, `token-saver.raw_tokens`, `token-saver.out_tokens`, `token-saver.saved_tokens`,
+`token-saver.raw_bytes` and `token-saver.out_bytes` attributes.
 
 Because the exporter uses plain HTTP/1.1 (the standard library provides no TLS),
 it cannot reach an `https://` ingest directly — point it at a local
@@ -740,14 +740,14 @@ affected.
 ## Project structure
 
 ```text
-tokensaver/
+token-saver/
 ├── Cargo.toml              # Manifest; size-optimized release profile
 ├── README.md
 ├── src/
 │   ├── main.rs             # CLI entry: arg parsing, --help/--raw/--extreme, dispatch
-│   ├── init.rs             # `tokensaver init`: Copilot instructions + hook integration
-│   ├── hook.rs             # `tokensaver hook`: Copilot postToolUse hook adapter
-│   ├── metrics.rs          # `tokensaver gain`: token estimation + JSONL logging
+│   ├── init.rs             # `token-saver init`: Copilot instructions + hook integration
+│   ├── hook.rs             # `token-saver hook`: Copilot postToolUse hook adapter
+│   ├── metrics.rs          # `token-saver gain`: token estimation + JSONL logging
 │   ├── tokenizer.rs        # heuristic + near-real model token counters
 │   ├── otel.rs             # OpenTelemetry OTLP span export (file + HTTP)
 │   ├── runner.rs           # Process execution and Outcome { stdout, stderr, code }
@@ -772,7 +772,7 @@ cargo test
 
 The suite covers each per-command formatter, the generic compression heuristics
 (ANSI stripping, dedup, head/tail excerpts, signal extraction), command
-rewriting, the `tokensaver init` instruction-block merge, the `tokensaver hook` payload
+rewriting, the `token-saver init` instruction-block merge, the `token-saver hook` payload
 parsing and `modifiedResult` output, heuristic/model token accounting and
 metrics aggregation,
 and end-to-end binary behavior (usage output, exit-code propagation, `--raw`

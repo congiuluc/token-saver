@@ -1,6 +1,6 @@
 # Command Formatters
 
-TokenSaver includes dedicated formatters for common developer commands. If a
+token-saver includes dedicated formatters for common developer commands. If a
 formatter is not available, output falls back to the generic compressor.
 
 ## Supported command groups

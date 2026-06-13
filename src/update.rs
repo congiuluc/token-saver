@@ -13,12 +13,12 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitCode};
 
 /// The `owner/repo` slug used to build GitHub API and download URLs.
-const REPO: &str = "congiuluc/TokenSaver";
+const REPO: &str = "congiuluc/token-saver";
 
 /// The version compiled into this binary (from `Cargo.toml`).
 const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
 
-/// Entry point for `tokensaver update [--check] [--force]`.
+/// Entry point for `token-saver update [--check] [--force]`.
 pub fn run(args: &[String]) -> ExitCode {
     let mut check_only = false;
     let mut force = false;
@@ -32,20 +32,20 @@ pub fn run(args: &[String]) -> ExitCode {
                 return ExitCode::SUCCESS;
             }
             other => {
-                eprintln!("tokensaver: unknown update option '{other}'");
-                eprintln!("usage: tokensaver update [--check] [--force]");
+                eprintln!("token-saver: unknown update option '{other}'");
+                eprintln!("usage: token-saver update [--check] [--force]");
                 return ExitCode::from(2);
             }
         }
     }
 
-    println!("tokensaver: current version v{CURRENT_VERSION}");
-    println!("tokensaver: checking {REPO} for the latest release...");
+    println!("token-saver: current version v{CURRENT_VERSION}");
+    println!("token-saver: checking {REPO} for the latest release...");
 
     let latest = match fetch_latest_tag() {
         Ok(tag) => tag,
         Err(err) => {
-            eprintln!("tokensaver: could not check for updates: {err}");
+            eprintln!("token-saver: could not check for updates: {err}");
             return ExitCode::from(1);
         }
     };
@@ -54,30 +54,30 @@ pub fn run(args: &[String]) -> ExitCode {
     let up_to_date = !is_newer(&latest, CURRENT_VERSION);
 
     if up_to_date && !force {
-        println!("tokensaver: already up to date (latest is v{latest_clean}).");
+        println!("token-saver: already up to date (latest is v{latest_clean}).");
         return ExitCode::SUCCESS;
     }
 
     if up_to_date {
-        println!("tokensaver: reinstalling v{latest_clean} (--force).");
+        println!("token-saver: reinstalling v{latest_clean} (--force).");
     } else {
-        println!("tokensaver: new version available: v{CURRENT_VERSION} -> v{latest_clean}");
+        println!("token-saver: new version available: v{CURRENT_VERSION} -> v{latest_clean}");
     }
 
     if check_only {
         if !up_to_date {
-            println!("tokensaver: run `tokensaver update` to install it.");
+            println!("token-saver: run `token-saver update` to install it.");
         }
         return ExitCode::SUCCESS;
     }
 
     match perform_update(&latest) {
         Ok(path) => {
-            println!("tokensaver: updated to v{latest_clean} at {}", path.display());
+            println!("token-saver: updated to v{latest_clean} at {}", path.display());
             ExitCode::SUCCESS
         }
         Err(err) => {
-            eprintln!("tokensaver: update failed: {err}");
+            eprintln!("token-saver: update failed: {err}");
             ExitCode::from(1)
         }
     }
@@ -89,14 +89,14 @@ fn perform_update(tag: &str) -> io::Result<PathBuf> {
     let target = target_triple()
         .ok_or_else(|| make_err("this platform has no prebuilt release; install with cargo or from source"))?;
     let ext = archive_ext();
-    let asset_dir = format!("tokensaver-{target}");
+    let asset_dir = format!("token-saver-{target}");
     let asset = format!("{asset_dir}.{ext}");
     let base = format!("https://github.com/{REPO}/releases/download/{tag}");
 
     let work_dir = unique_temp_dir()?;
     let archive_path = work_dir.join(&asset);
 
-    println!("tokensaver: downloading {asset}...");
+    println!("token-saver: downloading {asset}...");
     download(&format!("{base}/{asset}"), &archive_path)?;
 
     // Best-effort checksum verification: only fails on a genuine mismatch, not
@@ -104,29 +104,29 @@ fn perform_update(tag: &str) -> io::Result<PathBuf> {
     let sha_path = work_dir.join(format!("{asset}.sha256"));
     if download(&format!("{base}/{asset}.sha256"), &sha_path).is_ok() {
         match verify_checksum(&archive_path, &sha_path) {
-            Ok(true) => println!("tokensaver: checksum verified."),
+            Ok(true) => println!("token-saver: checksum verified."),
             Ok(false) => {
                 let _ = fs::remove_dir_all(&work_dir);
                 return Err(make_err("checksum verification failed; aborting"));
             }
-            Err(_) => eprintln!("tokensaver: warning: could not verify checksum, continuing."),
+            Err(_) => eprintln!("token-saver: warning: could not verify checksum, continuing."),
         }
     } else {
-        eprintln!("tokensaver: warning: checksum file unavailable, continuing.");
+        eprintln!("token-saver: warning: checksum file unavailable, continuing.");
     }
 
-    println!("tokensaver: extracting...");
+    println!("token-saver: extracting...");
     extract(&archive_path, &work_dir)?;
 
     let extracted = work_dir.join(&asset_dir);
     let current_exe = env::current_exe()?;
     let install_dir = current_exe.parent().unwrap_or_else(|| Path::new("."));
 
-    let bin_name = exe_name("tokensaver");
+    let bin_name = exe_name("token-saver");
     let new_bin = extracted.join(&bin_name);
     if !new_bin.exists() {
         let _ = fs::remove_dir_all(&work_dir);
-        return Err(make_err("downloaded archive did not contain the tokensaver binary"));
+        return Err(make_err("downloaded archive did not contain the token-saver binary"));
     }
 
     replace_binary(&current_exe, &new_bin)?;
@@ -137,7 +137,7 @@ fn perform_update(tag: &str) -> io::Result<PathBuf> {
     let ts_new = extracted.join(&ts_name);
     if ts_new.exists() && ts_target.exists() {
         if let Err(e) = replace_binary(&ts_target, &ts_new) {
-            eprintln!("tokensaver: warning: could not update '{ts_name}': {e}");
+            eprintln!("token-saver: warning: could not update '{ts_name}': {e}");
         }
     }
 
@@ -245,11 +245,11 @@ fn download(url: &str, dest: &Path) -> io::Result<()> {
     let mut candidates: Vec<(&str, Vec<String>)> = vec![
         (
             "curl",
-            vec!["-fsSL".into(), "-A".into(), "tokensaver-updater".into(), url.into(), "-o".into(), dest_str.clone()],
+            vec!["-fsSL".into(), "-A".into(), "token-saver-updater".into(), url.into(), "-o".into(), dest_str.clone()],
         ),
         (
             "wget",
-            vec!["-q".into(), "-U".into(), "tokensaver-updater".into(), "-O".into(), dest_str.clone(), url.into()],
+            vec!["-q".into(), "-U".into(), "token-saver-updater".into(), "-O".into(), dest_str.clone(), url.into()],
         ),
     ];
 
@@ -258,7 +258,7 @@ fn download(url: &str, dest: &Path) -> io::Result<()> {
             "$ProgressPreference='SilentlyContinue'; \
              [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12; \
              Invoke-WebRequest -Uri '{url}' -OutFile '{dest_str}' \
-             -Headers @{{'User-Agent'='tokensaver-updater'}} -UseBasicParsing"
+             -Headers @{{'User-Agent'='token-saver-updater'}} -UseBasicParsing"
         );
         candidates.push(("powershell", vec!["-NoProfile".into(), "-Command".into(), script]));
     }
@@ -393,7 +393,7 @@ fn capture(program: &str, args: &[&str]) -> Option<String> {
 /// Creates a fresh, process-unique temporary directory.
 fn unique_temp_dir() -> io::Result<PathBuf> {
     let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
-    let dir = env::temp_dir().join(format!("tokensaver-update-{}-{}", std::process::id(), nanos));
+    let dir = env::temp_dir().join(format!("token-saver-update-{}-{}", std::process::id(), nanos));
     fs::create_dir_all(&dir)?;
     Ok(dir)
 }
@@ -406,12 +406,12 @@ fn make_err(message: &str) -> io::Error {
 /// Prints help for the `update` subcommand.
 fn print_help() {
     println!(
-        "tokensaver update — update tokensaver to the latest release\n\
+        "token-saver update — update token-saver to the latest release\n\
          \n\
          USAGE:\n\
-         \x20 tokensaver update            Check for and install the latest version\n\
-         \x20 tokensaver update --check    Only report whether a newer version exists\n\
-         \x20 tokensaver update --force    Reinstall even if already up to date\n\
+         \x20 token-saver update            Check for and install the latest version\n\
+         \x20 token-saver update --check    Only report whether a newer version exists\n\
+         \x20 token-saver update --force    Reinstall even if already up to date\n\
          \n\
          The latest release is fetched from https://github.com/{REPO}/releases."
     );

@@ -1,9 +1,9 @@
-//! `tokensaver init` — register `tokensaver` with GitHub Copilot by writing a managed
+//! `token-saver init` — register `token-saver` with GitHub Copilot by writing a managed
 //! instructions block into a `copilot-instructions.md` file.
 //!
 //! GitHub Copilot automatically prepends the contents of `copilot-instructions.md`
 //! to every request, so a short rule telling the agent to prefix shell commands
-//! with `tokensaver` is enough to route tool/prompt commands through tokensaver.
+//! with `token-saver` is enough to route tool/prompt commands through token-saver.
 //! The block is delimited by HTML comment markers so re-running `init` updates the
 //! block in place instead of duplicating it, leaving the rest of the file intact.
 
@@ -13,12 +13,12 @@ use std::io;
 use std::path::PathBuf;
 
 /// Opening marker for the managed instructions block.
-const BEGIN_MARKER: &str = "<!-- tokensaver-instructions v1 -->";
+const BEGIN_MARKER: &str = "<!-- token-saver-instructions v1 -->";
 /// Closing marker for the managed instructions block.
-const END_MARKER: &str = "<!-- /tokensaver-instructions -->";
+const END_MARKER: &str = "<!-- /token-saver-instructions -->";
 
 /// Filename for the generated Copilot hook configuration.
-const HOOK_FILE: &str = "tokensaver.json";
+const HOOK_FILE: &str = "token-saver.json";
 
 /// Where the Copilot instructions file should be written.
 pub enum Scope {
@@ -30,7 +30,7 @@ pub enum Scope {
     Agents,
 }
 
-/// Writes (or refreshes) the managed `tokensaver` instructions block for `scope` and
+/// Writes (or refreshes) the managed `token-saver` instructions block for `scope` and
 /// returns the path of the file that was written.
 pub fn run(scope: Scope) -> io::Result<PathBuf> {
     let path = target_path(scope)?;
@@ -68,7 +68,7 @@ pub fn merge(existing: &str, block: &str) -> String {
     out
 }
 
-/// Removes the managed `tokensaver` instructions block for `scope` and returns the
+/// Removes the managed `token-saver` instructions block for `scope` and returns the
 /// path it was removed from, or `None` if no managed block was present.
 ///
 /// Only the block between the markers is removed; surrounding user content is
@@ -109,7 +109,7 @@ pub fn strip(existing: &str) -> Option<String> {
     Some(out)
 }
 
-/// Deletes the `tokensaver` `postToolUse` hook configuration for the requested scope
+/// Deletes the `token-saver` `postToolUse` hook configuration for the requested scope
 /// and returns the path removed, or `None` if no hook config existed.
 pub fn uninstall_hook(global: bool) -> io::Result<Option<PathBuf>> {
     let path = hook_path(global)?;
@@ -120,12 +120,12 @@ pub fn uninstall_hook(global: bool) -> io::Result<Option<PathBuf>> {
     }
 }
 
-/// Writes (or overwrites) the `tokensaver` `postToolUse` hook configuration and
+/// Writes (or overwrites) the `token-saver` `postToolUse` hook configuration and
 /// returns the path written.
 ///
 /// With `global` the config is written to the user-level hooks directory
-/// (`~/.copilot/hooks/tokensaver.json`), applying to every workspace; otherwise it is
-/// written to the repository's `.github/hooks/tokensaver.json`, applying to the
+/// (`~/.copilot/hooks/token-saver.json`), applying to every workspace; otherwise it is
+/// written to the repository's `.github/hooks/token-saver.json`, applying to the
 /// current repo only.
 pub fn run_hook(global: bool) -> io::Result<PathBuf> {
     let path = hook_path(global)?;
@@ -148,7 +148,7 @@ fn hook_path(global: bool) -> io::Result<PathBuf> {
 /// Builds the `postToolUse` hook configuration document.
 ///
 /// `postToolUse` fires after every tool and does not support a `matcher`, so the
-/// config simply registers `tokensaver hook`; the adapter itself filters to shell
+/// config simply registers `token-saver hook`; the adapter itself filters to shell
 /// tools and only rewrites a result when compression shrinks it.
 fn hook_config() -> String {
     r#"{
@@ -157,7 +157,7 @@ fn hook_config() -> String {
     "postToolUse": [
       {
         "type": "command",
-        "command": "tokensaver hook",
+        "command": "token-saver hook",
         "timeoutSec": 10
       }
     ]
@@ -187,9 +187,9 @@ fn home_dir() -> io::Result<PathBuf> {
 fn block() -> String {
     format!(
         "{BEGIN_MARKER}\n\
-         # tokensaver — Token-Optimized Command Output\n\
+         # token-saver — Token-Optimized Command Output\n\
          \n\
-         **tokensaver** runs a command and prints an extremely compact summary of\n\
+         **token-saver** runs a command and prints an extremely compact summary of\n\
          its output, cutting token usage on noisy commands.\n\
          \n\
          ## Rule\n\
@@ -252,7 +252,7 @@ mod tests {
         let cfg = hook_config();
         assert!(cfg.contains("\"version\": 1"));
         assert!(cfg.contains("\"postToolUse\""));
-        assert!(cfg.contains("\"command\": \"tokensaver hook\""));
+        assert!(cfg.contains("\"command\": \"token-saver hook\""));
         assert!(cfg.ends_with('\n'));
     }
 

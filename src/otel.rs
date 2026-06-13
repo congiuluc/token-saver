@@ -1,6 +1,6 @@
-//! OpenTelemetry export for tokensaver events.
+//! OpenTelemetry export for token-saver events.
 //!
-//! Each tokensaver run (a `run`, a `stdin` filter, or a `hook` compression) can be
+//! Each token-saver run (a `run`, a `stdin` filter, or a `hook` compression) can be
 //! emitted as an OTLP **span** describing how much the output was compressed.
 //! Export is dependency-free and built on `std` only, so it is constrained to
 //! plain HTTP/1.1: it cannot reach an HTTPS ingest directly — point it at a
@@ -8,15 +8,15 @@
 //!
 //! Two sinks, both opt-in:
 //! - **Local file** — when OpenTelemetry is enabled, spans are appended as OTLP
-//!   JSON (one document per line) to `~/.tokensaver/traces.jsonl`. Override the path
-//!   with `TOKENSAVER_OTEL_FILE`, or disable the file with `off`, `0`, or empty.
+//!   JSON (one document per line) to `~/.token-saver/traces.jsonl`. Override the path
+//!   with `TOKEN_SAVER_OTEL_FILE`, or disable the file with `off`, `0`, or empty.
 //! - **OTLP/HTTP** — when `OTEL_EXPORTER_OTLP_ENDPOINT` (or
 //!   `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) is set, the span is POSTed as OTLP
 //!   JSON to `<endpoint>/v1/traces`.
 //!
-//! OpenTelemetry is active when `TOKENSAVER_OTEL` is truthy (anything other than
+//! OpenTelemetry is active when `TOKEN_SAVER_OTEL` is truthy (anything other than
 //! `off`/`0`/empty) or when an OTLP endpoint is configured. The service name
-//! honors `OTEL_SERVICE_NAME` (default `tokensaver`). All failures are swallowed so
+//! honors `OTEL_SERVICE_NAME` (default `token-saver`). All failures are swallowed so
 //! telemetry never affects the primary command.
 
 use std::env;
@@ -26,7 +26,7 @@ use std::net::{TcpStream, ToSocketAddrs};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-/// A measured tokensaver event to export as an OTLP span.
+/// A measured token-saver event to export as an OTLP span.
 pub struct Span<'a> {
     /// Invocation kind (`run`, `stdin`, `hook`).
     pub mode: &'a str,
@@ -34,11 +34,11 @@ pub struct Span<'a> {
     pub command: &'a str,
     /// Estimated tokens in the raw (original) input.
     pub raw_tokens: u64,
-    /// Estimated tokens in the tokensaver output.
+    /// Estimated tokens in the token-saver output.
     pub out_tokens: u64,
     /// Byte length of the raw input.
     pub raw_bytes: u64,
-    /// Byte length of the tokensaver output.
+    /// Byte length of the token-saver output.
     pub out_bytes: u64,
     /// Wall-clock duration of the run.
     pub duration: Duration,
@@ -62,7 +62,7 @@ pub fn export(span: &Span) {
 
 /// Reports whether OpenTelemetry export is active.
 fn enabled() -> bool {
-    is_truthy("TOKENSAVER_OTEL") || traces_endpoint().is_some()
+    is_truthy("TOKEN_SAVER_OTEL") || traces_endpoint().is_some()
 }
 
 /// Returns `true` when `var` is set to anything other than `off`, `0`, or empty.
@@ -86,11 +86,11 @@ fn traces_endpoint() -> Option<String> {
     Some(format!("{}/v1/traces", base.trim_end_matches('/')))
 }
 
-/// Resolves the local span file path, honoring the `TOKENSAVER_OTEL_FILE` override
+/// Resolves the local span file path, honoring the `TOKEN_SAVER_OTEL_FILE` override
 /// and its disable sentinels (`off`, `0`, empty). Returns `None` when disabled
 /// or when the home directory cannot be determined.
 fn file_path() -> Option<PathBuf> {
-    match env::var("TOKENSAVER_OTEL_FILE") {
+    match env::var("TOKEN_SAVER_OTEL_FILE") {
         Ok(value) => {
             let trimmed = value.trim();
             if trimmed.is_empty() || trimmed.eq_ignore_ascii_case("off") || trimmed == "0" {
@@ -99,13 +99,13 @@ fn file_path() -> Option<PathBuf> {
                 Some(PathBuf::from(trimmed))
             }
         }
-        Err(_) => home_dir().map(|home| home.join(".tokensaver").join("traces.jsonl")),
+        Err(_) => home_dir().map(|home| home.join(".token-saver").join("traces.jsonl")),
     }
 }
 
-/// Returns the configured OTLP service name, defaulting to `tokensaver`.
+/// Returns the configured OTLP service name, defaulting to `token-saver`.
 fn service_name() -> String {
-    non_empty_var("OTEL_SERVICE_NAME").unwrap_or_else(|| "tokensaver".to_string())
+    non_empty_var("OTEL_SERVICE_NAME").unwrap_or_else(|| "token-saver".to_string())
 }
 
 /// Returns the trimmed value of `var` when it is set and non-empty.
@@ -122,20 +122,20 @@ fn build_payload(span: &Span) -> String {
     let span_id = &ids[32..48];
     let saved = span.raw_tokens.saturating_sub(span.out_tokens);
     let attrs = [
-        attr_str("tokensaver.mode", span.mode),
-        attr_str("tokensaver.command", span.command),
-        attr_int("tokensaver.raw_tokens", span.raw_tokens),
-        attr_int("tokensaver.out_tokens", span.out_tokens),
-        attr_int("tokensaver.saved_tokens", saved),
-        attr_int("tokensaver.raw_bytes", span.raw_bytes),
-        attr_int("tokensaver.out_bytes", span.out_bytes),
+        attr_str("token-saver.mode", span.mode),
+        attr_str("token-saver.command", span.command),
+        attr_int("token-saver.raw_tokens", span.raw_tokens),
+        attr_int("token-saver.out_tokens", span.out_tokens),
+        attr_int("token-saver.saved_tokens", saved),
+        attr_int("token-saver.raw_bytes", span.raw_bytes),
+        attr_int("token-saver.out_bytes", span.out_bytes),
     ]
     .join(",");
     format!(
         "{{\"resourceSpans\":[{{\"resource\":{{\"attributes\":[{resource}]}},\
-         \"scopeSpans\":[{{\"scope\":{{\"name\":\"tokensaver\",\"version\":\"{version}\"}},\
+         \"scopeSpans\":[{{\"scope\":{{\"name\":\"token-saver\",\"version\":\"{version}\"}},\
          \"spans\":[{{\"traceId\":\"{trace_id}\",\"spanId\":\"{span_id}\",\
-         \"name\":\"tokensaver.{name}\",\"kind\":1,\
+         \"name\":\"token-saver.{name}\",\"kind\":1,\
          \"startTimeUnixNano\":\"{start}\",\"endTimeUnixNano\":\"{end}\",\
          \"attributes\":[{attrs}],\"status\":{{\"code\":1}}}}]}}]}}]}}",
         resource = attr_str("service.name", &service_name()),
@@ -305,9 +305,9 @@ mod tests {
         };
         let payload = build_payload(&span);
         assert!(payload.contains("\"resourceSpans\""));
-        assert!(payload.contains("\"name\":\"tokensaver.run\""));
+        assert!(payload.contains("\"name\":\"token-saver.run\""));
         assert!(payload.contains("\"service.name\""));
-        assert!(payload.contains("\"tokensaver.saved_tokens\""));
+        assert!(payload.contains("\"token-saver.saved_tokens\""));
         assert!(payload.contains("\"intValue\":\"80\""));
     }
 }

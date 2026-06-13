@@ -17,14 +17,14 @@ Versioning.
   SHA-256 checksum.
 - One-line install scripts: `install.sh` (Linux/macOS) and `install.ps1`
   (Windows), plus `cargo install` support and an Installation docs page.
-- `tokensaver update` command to check GitHub Releases for a newer version and
+- `token-saver update` command to check GitHub Releases for a newer version and
   self-update the binary in place (with `--check` and `--force` options), plus
-  `tokensaver version` / `--version` / `-V` to print the installed version.
-- `tokensaver gallery` (alias `marketplace`): a local, dependency-free gallery
+  `token-saver version` / `--version` / `-V` to print the installed version.
+- `token-saver gallery` (alias `marketplace`): a local, dependency-free gallery
   for user-defined Copilot context objects. Harvests user-authored agents,
   skills, prompts and instructions out of `~/.copilot`, `~/.agents`, the VS Code
   `User/prompts` folder and home-level instruction files into
-  `~/.tokensaver/gallery` (dry run by default; `--apply` moves them and leaves
+  `~/.token-saver/gallery` (dry run by default; `--apply` moves them and leaves
   VS Code extension objects untouched). Includes `list`, `show`, `install`
   (into standard workspace Copilot paths), `remove`, and `serve` — a
   localhost-only browser gallery to browse and install items.
@@ -36,4 +36,4 @@ Versioning.
 ## [0.1.0] - 2026-06-13
 
 ### Added
-- Initial public release of tokensaver.
+- Initial public release of token-saver.

@@ -1,6 +1,6 @@
 # Architecture
 
-TokenSaver follows a simple flow:
+token-saver follows a simple flow:
 
 1. Parse CLI arguments.
 2. Optionally rewrite command invocation to a machine-readable variant.

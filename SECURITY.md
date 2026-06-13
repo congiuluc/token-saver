@@ -15,7 +15,7 @@ released for the most recent tagged version.
 Please do not open public issues for security vulnerabilities.
 
 Report vulnerabilities privately by emailing:
-- opensource@tokensaver.dev
+- opensource@token-saver.dev
 
 Include the following details when possible:
 - A clear description of the issue and impact

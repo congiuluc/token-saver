@@ -1,13 +1,13 @@
 //! Token counting backends used by metrics.
 //!
-//! `TOKENSAVER_TOKENIZER` selects the active tokenizer mode:
+//! `TOKEN_SAVER_TOKENIZER` selects the active tokenizer mode:
 //! - `gpt5` (default): OpenAI-like BPE using `o200k` encoding
 //! - `o200k`: OpenAI-like BPE (near-real for GPT-4o/GPT-5 style encodings)
 //! - `cl100k`: OpenAI-like BPE (near-real for GPT-4/3.5 style encodings)
 //! - `heuristic`: approximate with ceil(chars/4)
 //!
 //! The active mode decides the primary `rawTokens`/`outTokens` totals used by
-//! `tokensaver gain`. Heuristic and model counts are also computed separately so the
+//! `token-saver gain`. Heuristic and model counts are also computed separately so the
 //! report can display both side by side.
 
 use tiktoken_rs::{cl100k_base, o200k_base};
@@ -63,7 +63,7 @@ pub enum TokenizerMode {
 }
 
 impl TokenizerMode {
-    /// Parses `TOKENSAVER_TOKENIZER` values.
+    /// Parses `TOKEN_SAVER_TOKENIZER` values.
     pub fn parse(value: &str) -> Self {
         match value.trim().to_ascii_lowercase().as_str() {
             "gpt5" | "gpt-5" => Self::Gpt5,
@@ -95,7 +95,7 @@ impl TokenizerMode {
 
 /// Returns the active tokenizer mode from environment.
 pub fn active_mode() -> TokenizerMode {
-    let value = std::env::var("TOKENSAVER_TOKENIZER").unwrap_or_else(|_| "gpt5".to_string());
+    let value = std::env::var("TOKEN_SAVER_TOKENIZER").unwrap_or_else(|_| "gpt5".to_string());
     TokenizerMode::parse(&value)
 }
 
