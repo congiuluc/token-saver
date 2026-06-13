@@ -203,37 +203,90 @@ back to the generic compressor, so output is never lost.
 
 ## Installation
 
-Requires the [Rust toolchain](https://rustup.rs/) (install via
-[rustup](https://rustup.rs/); `cargo` must be available).
+`tokensaver` runs on **Windows, Linux, and macOS** (x86_64 and arm64). Pick the
+option that suits you — prebuilt binaries (no toolchain required), `cargo install`,
+or building from source.
 
-### Build `tokensaver.exe` from source
+### Quick install (prebuilt binaries)
+
+These one-liners download the right prebuilt archive for your platform from the
+[latest GitHub release](https://github.com/congiuluc/TokenSaver/releases/latest),
+verify its checksum, and install the `tokensaver` and `ts` binaries onto your `PATH`.
+
+**Linux / macOS** (installs to `~/.local/bin`):
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.sh | sh
+```
+
+**Windows** (PowerShell; installs to `%LOCALAPPDATA%\Programs\tokensaver`):
 
 ```powershell
+irm https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.ps1 | iex
+```
+
+To pin a specific version, set the version before running the installer:
+
+```sh
+# Linux / macOS
+TOKENSAVER_VERSION=v0.1.0 curl -fsSL https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.sh | sh
+```
+
+```powershell
+# Windows
+$env:TOKENSAVER_VERSION = "v0.1.0"; irm https://raw.githubusercontent.com/congiuluc/TokenSaver/main/install.ps1 | iex
+```
+
+> Prefer to inspect scripts before running them? Download
+> [`install.sh`](install.sh) / [`install.ps1`](install.ps1), review, then run locally.
+
+### Install with Cargo
+
+If you have the [Rust toolchain](https://rustup.rs/), install straight from the
+repository (works on every platform):
+
+```sh
+cargo install --git https://github.com/congiuluc/TokenSaver
+```
+
+This builds and copies the `tokensaver` and `ts` binaries into your Cargo bin
+directory (`~/.cargo/bin`), which `rustup` already puts on your `PATH`.
+
+### Build from source
+
+```sh
 # From the project root (the folder containing Cargo.toml)
 cargo build --release
 ```
 
 This uses the size-optimized release profile (`opt-level="z"`, `lto`, `strip`)
-and produces a small standalone executable at:
+and produces small standalone executables at:
 
 ```text
-target\release\tokensaver.exe   # Windows
-target/release/tokensaver       # Linux / macOS
+target/release/tokensaver(.exe)   # main binary
+target/release/ts(.exe)           # short alias
 ```
 
-For a faster, unoptimized debug build instead, omit `--release` (output lands in
-`target\debug\`).
+The `.exe` suffix is added on Windows only. For a faster, unoptimized debug
+build, omit `--release` (output lands in `target/debug/`).
 
-> If `cargo` is not on your `PATH`, call it with its full path, e.g.
-> `& "$env:USERPROFILE\.cargo\bin\cargo.exe" build --release`.
+Then copy the binary somewhere on your `PATH`:
 
-### Put it on your PATH
-
-Copy the binary somewhere on your `PATH` so you can run `tokensaver` from anywhere.
-Your Cargo bin folder is already on the `PATH` after installing rustup:
+```sh
+# Linux / macOS
+install -m 0755 target/release/tokensaver ~/.local/bin/
+install -m 0755 target/release/ts ~/.local/bin/
+```
 
 ```powershell
-Copy-Item target\release\tokensaver.exe "$env:USERPROFILE\.cargo\bin\"
+# Windows (PowerShell)
+Copy-Item target\release\tokensaver.exe, target\release\ts.exe "$env:USERPROFILE\.cargo\bin\"
+```
+
+### Verify the install
+
+```sh
+tokensaver --help
 ```
 
 ## Usage

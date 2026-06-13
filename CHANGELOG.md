@@ -12,6 +12,11 @@ Versioning.
 - GitHub issue templates and pull request template.
 - CI, release, security, and GitHub Pages workflows.
 - Documentation website scaffold in docs/.
+- Cross-platform prebuilt release archives (Windows, Linux, macOS; x86_64 and
+  arm64) published automatically when a `v*.*.*` tag is pushed, each with a
+  SHA-256 checksum.
+- One-line install scripts: `install.sh` (Linux/macOS) and `install.ps1`
+  (Windows), plus `cargo install` support and an Installation docs page.
 
 ### Changed
 - Improved crate metadata in Cargo.toml.

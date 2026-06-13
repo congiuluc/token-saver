@@ -8,23 +8,36 @@ on:
 permissions:
   contents: write
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
   build:
-    name: Build (${{ matrix.os }})
+    name: Build ${{ matrix.target }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: ubuntu-latest
-            binary: target/release/tokensaver
-            asset: tokensaver-linux-x86_64
-          - os: windows-latest
-            binary: target/release/tokensaver.exe
-            asset: tokensaver-windows-x86_64.exe
+            target: x86_64-unknown-linux-gnu
+            archive: tar.gz
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            archive: tar.gz
+            linker: gcc-aarch64-linux-gnu
           - os: macos-latest
-            binary: target/release/tokensaver
-            asset: tokensaver-macos
+            target: x86_64-apple-darwin
+            archive: tar.gz
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: zip
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            archive: zip
 
     steps:
       - name: Checkout
@@ -32,31 +45,62 @@ jobs:
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
 
-      - name: Build release binary
-        run: cargo build --release
-
-      - name: Package artifact (unix)
-        if: runner.os != 'Windows'
+      - name: Install cross linker (Linux aarch64)
+        if: matrix.linker != ''
         run: |
-          mkdir -p dist
-          cp ${{ matrix.binary }} dist/${{ matrix.asset }}
+          sudo apt-get update
+          sudo apt-get install -y ${{ matrix.linker }}
+          mkdir -p .cargo
+          {
+            echo "[target.aarch64-unknown-linux-gnu]"
+            echo "linker = \"aarch64-linux-gnu-gcc\""
+          } >> .cargo/config.toml
 
-      - name: Package artifact (windows)
-        if: runner.os == 'Windows'
+      - name: Build release binaries
+        run: cargo build --release --locked --target ${{ matrix.target }}
+
+      - name: Package archive (unix)
+        if: matrix.archive == 'tar.gz'
+        shell: bash
+        run: |
+          set -euo pipefail
+          staging="tokensaver-${{ matrix.target }}"
+          mkdir -p "$staging"
+          cp "target/${{ matrix.target }}/release/tokensaver" "$staging/"
+          cp "target/${{ matrix.target }}/release/ts" "$staging/"
+          cp README.md LICENSE "$staging/"
+          tar -czf "$staging.tar.gz" "$staging"
+          shasum -a 256 "$staging.tar.gz" > "$staging.tar.gz.sha256"
+
+      - name: Package archive (windows)
+        if: matrix.archive == 'zip'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path dist | Out-Null
-          Copy-Item "${{ matrix.binary }}" "dist/${{ matrix.asset }}"
+          $ErrorActionPreference = "Stop"
+          $staging = "tokensaver-${{ matrix.target }}"
+          New-Item -ItemType Directory -Force -Path $staging | Out-Null
+          Copy-Item "target/${{ matrix.target }}/release/tokensaver.exe" $staging
+          Copy-Item "target/${{ matrix.target }}/release/ts.exe" $staging
+          Copy-Item README.md, LICENSE $staging
+          Compress-Archive -Path $staging -DestinationPath "$staging.zip" -Force
+          (Get-FileHash "$staging.zip" -Algorithm SHA256).Hash.ToLower() + "  $staging.zip" |
+            Out-File -Encoding ascii "$staging.zip.sha256"
 
-      - name: Upload artifact
+      - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.asset }}
-          path: dist/${{ matrix.asset }}
+          name: tokensaver-${{ matrix.target }}
+          path: |
+            tokensaver-${{ matrix.target }}.${{ matrix.archive }}
+            tokensaver-${{ matrix.target }}.${{ matrix.archive }}.sha256
 
   publish:
     name: Publish GitHub release
@@ -75,3 +119,4 @@ jobs:
         with:
           files: dist/*
           generate_release_notes: true
+          fail_on_unmatched_files: true
