@@ -69,11 +69,7 @@ FAILED tests/test_api.py::test_login - AssertionError
 FAILED tests/test_api.py::test_logout - KeyError
 ==================== 2 failed, 8 passed in 1.20s ====================
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 1,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 1 };
         assert_eq!(
             pytest(&out),
             "✗ 2 failed, 8 passed in 1.20s\n  - tests/test_api.py::test_login\n  - tests/test_api.py::test_logout"

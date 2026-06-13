@@ -47,9 +47,7 @@ pub fn vitest(out: &Outcome) -> String {
 /// Extracts a failed test name from a `✕`/`×`-prefixed line, dropping any
 /// trailing ` (12 ms)` duration annotation.
 fn failure_name(trimmed: &str) -> Option<String> {
-    let rest = trimmed
-        .strip_prefix("✕ ")
-        .or_else(|| trimmed.strip_prefix("× "))?;
+    let rest = trimmed.strip_prefix("✕ ").or_else(|| trimmed.strip_prefix("× "))?;
     let name = rest.split(" (").next().unwrap_or(rest).trim();
     if name.is_empty() {
         None
@@ -101,11 +99,7 @@ mod tests {
 Tests:       2 failed, 8 passed, 10 total
 Test Suites: 1 failed, 2 passed, 3 total
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 1,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 1 };
         let summary = jest(&out);
         assert!(summary.starts_with("✗ jest: 2 failed, 8 passed, 10 total"));
         assert!(summary.contains("- adds numbers"));
@@ -118,11 +112,7 @@ Test Suites: 1 failed, 2 passed, 3 total
 Test Files  2 passed (2)
      Tests  10 passed (10)
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 0 };
         assert_eq!(vitest(&out), "✓ vitest: 10 passed (10)");
     }
 }

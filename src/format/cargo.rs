@@ -27,10 +27,7 @@ pub fn build(out: &Outcome) -> String {
         };
     }
 
-    let mut lines = vec![format!(
-        "✗ build failed: {} error(s), {warnings} warning(s)",
-        errors.len()
-    )];
+    let mut lines = vec![format!("✗ build failed: {} error(s), {warnings} warning(s)", errors.len())];
     for err in errors.iter().take(5) {
         lines.push(format!("  {err}"));
     }
@@ -96,10 +93,7 @@ pub fn test(out: &Outcome) -> String {
         return line;
     }
 
-    let mut lines = vec![format!(
-        "✗ tests: {failed} failed / {} run",
-        passed + failed
-    )];
+    let mut lines = vec![format!("✗ tests: {failed} failed / {} run", passed + failed)];
     for name in failures.iter().take(10) {
         lines.push(format!("  - {name}"));
     }
@@ -116,11 +110,7 @@ fn count_before(text: &str, keyword: &str) -> usize {
         Some(i) => i,
         None => return 0,
     };
-    text[..idx]
-        .split_whitespace()
-        .last()
-        .and_then(|n| n.parse().ok())
-        .unwrap_or(0)
+    text[..idx].split_whitespace().last().and_then(|n| n.parse().ok()).unwrap_or(0)
 }
 
 /// Strips ANSI and concatenates stdout and stderr.
@@ -157,15 +147,8 @@ failures:
 
 test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 101,
-        };
-        assert_eq!(
-            test(&out),
-            "✗ tests: 2 failed / 7 run\n  - tests::alpha\n  - tests::beta"
-        );
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 101 };
+        assert_eq!(test(&out), "✗ tests: 2 failed / 7 run\n  - tests::alpha\n  - tests::beta");
     }
 
     #[test]
@@ -182,8 +165,9 @@ test result: FAILED. 5 passed; 2 failed; 0 ignored; 0 measured
     fn summarizes_build_failure_with_errors() {
         let out = Outcome {
             stdout: String::new(),
-            stderr: "warning: unused import\nerror[E0432]: unresolved import `foo`\nerror: aborting due to previous error\n"
-                .to_string(),
+            stderr:
+                "warning: unused import\nerror[E0432]: unresolved import `foo`\nerror: aborting due to previous error\n"
+                    .to_string(),
             code: 101,
         };
         let summary = build(&out);

@@ -141,10 +141,7 @@ fn hook_path(global: bool) -> io::Result<PathBuf> {
     if global {
         Ok(home_dir()?.join(".copilot").join("hooks").join(HOOK_FILE))
     } else {
-        Ok(env::current_dir()?
-            .join(".github")
-            .join("hooks")
-            .join(HOOK_FILE))
+        Ok(env::current_dir()?.join(".github").join("hooks").join(HOOK_FILE))
     }
 }
 
@@ -173,9 +170,7 @@ fn hook_config() -> String {
 /// Resolves the instructions file path for the requested scope.
 fn target_path(scope: Scope) -> io::Result<PathBuf> {
     match scope {
-        Scope::Workspace => Ok(env::current_dir()?
-            .join(".github")
-            .join("copilot-instructions.md")),
+        Scope::Workspace => Ok(env::current_dir()?.join(".github").join("copilot-instructions.md")),
         Scope::Global => Ok(home_dir()?.join(".copilot").join("copilot-instructions.md")),
         Scope::Agents => Ok(env::current_dir()?.join("AGENTS.md")),
     }
@@ -183,15 +178,9 @@ fn target_path(scope: Scope) -> io::Result<PathBuf> {
 
 /// Returns the user's home directory, honoring `USERPROFILE` then `HOME`.
 fn home_dir() -> io::Result<PathBuf> {
-    env::var_os("USERPROFILE")
-        .or_else(|| env::var_os("HOME"))
-        .map(PathBuf::from)
-        .ok_or_else(|| {
-            io::Error::new(
-                io::ErrorKind::NotFound,
-                "could not determine home directory (set USERPROFILE or HOME)",
-            )
-        })
+    env::var_os("USERPROFILE").or_else(|| env::var_os("HOME")).map(PathBuf::from).ok_or_else(|| {
+        io::Error::new(io::ErrorKind::NotFound, "could not determine home directory (set USERPROFILE or HOME)")
+    })
 }
 
 /// Builds the managed instructions block (markers included, no trailing newline).

@@ -21,14 +21,8 @@ pub fn select(text: &str, keep: &[&str]) -> Option<Vec<Vec<String>>> {
     let columns = header_columns(header);
 
     // Map each requested column name to its index in the detected header.
-    let chosen: Vec<usize> = keep
-        .iter()
-        .filter_map(|name| {
-            columns
-                .iter()
-                .position(|c| c.name.eq_ignore_ascii_case(name))
-        })
-        .collect();
+    let chosen: Vec<usize> =
+        keep.iter().filter_map(|name| columns.iter().position(|c| c.name.eq_ignore_ascii_case(name))).collect();
     if chosen.is_empty() {
         return None;
     }
@@ -39,10 +33,7 @@ pub fn select(text: &str, keep: &[&str]) -> Option<Vec<Vec<String>>> {
             continue;
         }
         let cells = slice_row(line, &columns);
-        let picked: Vec<String> = chosen
-            .iter()
-            .map(|&i| cells.get(i).cloned().unwrap_or_default())
-            .collect();
+        let picked: Vec<String> = chosen.iter().map(|&i| cells.get(i).cloned().unwrap_or_default()).collect();
         rows.push(picked);
     }
     Some(rows)
@@ -71,10 +62,7 @@ fn header_columns(header: &str) -> Vec<Column> {
             name.push(chars[i]);
             i += 1;
         }
-        columns.push(Column {
-            name: name.trim().to_string(),
-            start,
-        });
+        columns.push(Column { name: name.trim().to_string(), start });
     }
     columns
 }
@@ -86,10 +74,7 @@ fn slice_row(line: &str, columns: &[Column]) -> Vec<String> {
 
     for (i, col) in columns.iter().enumerate() {
         let start = col.start.min(chars.len());
-        let end = columns
-            .get(i + 1)
-            .map(|next| next.start.min(chars.len()))
-            .unwrap_or(chars.len());
+        let end = columns.get(i + 1).map(|next| next.start.min(chars.len())).unwrap_or(chars.len());
         let value: String = chars[start..end].iter().collect();
         cells.push(value.trim().to_string());
     }

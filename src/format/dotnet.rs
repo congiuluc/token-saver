@@ -31,16 +31,10 @@ pub fn build(out: &Outcome) -> String {
         }
 
         // MSBuild summary footer: "    3 Warning(s)" / "    1 Error(s)".
-        if let Some(n) = trimmed
-            .strip_suffix(" Warning(s)")
-            .and_then(|s| s.trim().parse::<usize>().ok())
-        {
+        if let Some(n) = trimmed.strip_suffix(" Warning(s)").and_then(|s| s.trim().parse::<usize>().ok()) {
             summary_warnings = Some(n);
         }
-        if let Some(n) = trimmed
-            .strip_suffix(" Error(s)")
-            .and_then(|s| s.trim().parse::<usize>().ok())
-        {
+        if let Some(n) = trimmed.strip_suffix(" Error(s)").and_then(|s| s.trim().parse::<usize>().ok()) {
             summary_errors = Some(n);
         }
     }
@@ -61,9 +55,7 @@ pub fn build(out: &Outcome) -> String {
         return generic::summarize(out);
     }
 
-    let mut lines = vec![format!(
-        "✗ build failed: {err_count} error(s), {warn_count} warning(s)"
-    )];
+    let mut lines = vec![format!("✗ build failed: {err_count} error(s), {warn_count} warning(s)")];
     errors.dedup();
     for err in errors.iter().take(5) {
         lines.push(format!("  {err}"));
@@ -105,11 +97,7 @@ pub fn test(out: &Outcome) -> String {
     failures.dedup();
     let symbol = if out.code == 0 { "✓" } else { "✗" };
     // Strip the leading "Passed! / Failed!" marker, keeping the count detail.
-    let detail = summary
-        .split_once(" - ")
-        .map(|x| x.1)
-        .unwrap_or(&summary)
-        .trim();
+    let detail = summary.split_once(" - ").map(|x| x.1).unwrap_or(&summary).trim();
     let mut lines = vec![format!("{symbol} tests: {detail}")];
     for name in failures.iter().take(10) {
         lines.push(format!("  - {name}"));
@@ -126,10 +114,7 @@ pub fn restore(out: &Outcome) -> String {
         return generic::summarize(out);
     }
     let text = combined(out);
-    let restored = text
-        .lines()
-        .filter(|l| l.trim().starts_with("Restored "))
-        .count();
+    let restored = text.lines().filter(|l| l.trim().starts_with("Restored ")).count();
     match restored {
         0 => "✓ restore ok".to_string(),
         1 => "✓ restore ok (1 project)".to_string(),
@@ -175,9 +160,7 @@ mod tests {
     #[test]
     fn summarizes_build_failure_with_errors() {
         let out = Outcome {
-            stdout:
-                "Program.cs(12,5): error CS1002: ; expected [/repo/App.csproj]\n    1 Error(s)\n"
-                    .to_string(),
+            stdout: "Program.cs(12,5): error CS1002: ; expected [/repo/App.csproj]\n    1 Error(s)\n".to_string(),
             stderr: String::new(),
             code: 1,
         };
@@ -190,15 +173,11 @@ mod tests {
     #[test]
     fn summarizes_passing_tests() {
         let out = Outcome {
-            stdout: "Passed!  - Failed: 0, Passed: 10, Skipped: 0, Total: 10, Duration: 1 s\n"
-                .to_string(),
+            stdout: "Passed!  - Failed: 0, Passed: 10, Skipped: 0, Total: 10, Duration: 1 s\n".to_string(),
             stderr: String::new(),
             code: 0,
         };
-        assert_eq!(
-            test(&out),
-            "✓ tests: Failed: 0, Passed: 10, Skipped: 0, Total: 10, Duration: 1 s"
-        );
+        assert_eq!(test(&out), "✓ tests: Failed: 0, Passed: 10, Skipped: 0, Total: 10, Duration: 1 s");
     }
 
     #[test]
@@ -208,11 +187,7 @@ mod tests {
   Failed App.Tests.MathTests.Subtracts [2 ms]
 Failed!  - Failed: 2, Passed: 8, Skipped: 0, Total: 10, Duration: 1 s
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 1,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 1 };
         let summary = test(&out);
         assert!(summary.starts_with("✗ tests: Failed: 2, Passed: 8"));
         assert!(summary.contains("- App.Tests.MathTests.Adds"));

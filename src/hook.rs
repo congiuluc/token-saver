@@ -34,15 +34,12 @@ pub fn run(extreme: bool) -> ExitCode {
 /// Returns `"{}"` (keep the original result) unless the payload is a successful
 /// shell-tool result whose LLM text compresses to something strictly smaller.
 fn process(input: &str, extreme: bool) -> String {
-    let tool = extract_string(input, "toolName")
-        .or_else(|| extract_string(input, "tool_name"))
-        .unwrap_or_default();
+    let tool = extract_string(input, "toolName").or_else(|| extract_string(input, "tool_name")).unwrap_or_default();
     if tool != "bash" && tool != "powershell" {
         return "{}".to_string();
     }
 
-    let Some(text) = extract_string(input, "textResultForLlm")
-        .or_else(|| extract_string(input, "text_result_for_llm"))
+    let Some(text) = extract_string(input, "textResultForLlm").or_else(|| extract_string(input, "text_result_for_llm"))
     else {
         return "{}".to_string();
     };
@@ -183,8 +180,7 @@ mod tests {
 
     #[test]
     fn keeps_result_for_non_shell_tools() {
-        let payload =
-            r#"{"toolName":"view","toolResult":{"resultType":"success","textResultForLlm":"x"}}"#;
+        let payload = r#"{"toolName":"view","toolResult":{"resultType":"success","textResultForLlm":"x"}}"#;
         assert_eq!(process(payload, false), "{}");
     }
 

@@ -16,10 +16,7 @@ pub fn docker_ps(out: &Outcome) -> String {
     if rows.is_empty() {
         return "(no containers)".to_string();
     }
-    rows.iter()
-        .map(|cells| cells.join("  "))
-        .collect::<Vec<_>>()
-        .join("\n")
+    rows.iter().map(|cells| cells.join("  ")).collect::<Vec<_>>().join("\n")
 }
 
 /// Summarizes `kubectl get` resources, keeping identity and health columns and
@@ -52,11 +49,7 @@ mod tests {
     use super::*;
 
     fn ok(stdout: &str) -> Outcome {
-        Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 0,
-        }
+        Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 0 }
     }
 
     #[test]
@@ -76,11 +69,8 @@ abc123         nginx     \"run\"     Up 2 minutes   web
 
     #[test]
     fn docker_ps_falls_back_on_error() {
-        let out = Outcome {
-            stdout: String::new(),
-            stderr: "Cannot connect to the Docker daemon\n".to_string(),
-            code: 1,
-        };
+        let out =
+            Outcome { stdout: String::new(), stderr: "Cannot connect to the Docker daemon\n".to_string(), code: 1 };
         let summary = docker_ps(&out);
         assert!(summary.contains("Cannot connect to the Docker daemon"));
         assert!(summary.contains("! exit 1"));
@@ -93,9 +83,6 @@ NAME      READY   STATUS             RESTARTS   AGE
 web-0     1/1     Running            0          5m
 db-0      0/1     CrashLoopBackOff   3          5m
 ";
-        assert_eq!(
-            kubectl_get(&ok(text)),
-            "  web-0  1/1  Running  0\n! db-0  0/1  CrashLoopBackOff  3"
-        );
+        assert_eq!(kubectl_get(&ok(text)), "  web-0  1/1  Running  0\n! db-0  0/1  CrashLoopBackOff  3");
     }
 }

@@ -22,9 +22,7 @@ pub fn maven(out: &Outcome) -> String {
         }
 
         // Surefire aggregate: "Tests run: 12, Failures: 1, Errors: 0, Skipped: 2".
-        if body.starts_with("Tests run:")
-            && (body.contains("Failures:") || body.contains("Errors:"))
-        {
+        if body.starts_with("Tests run:") && (body.contains("Failures:") || body.contains("Errors:")) {
             test_summary = Some(body.trim().to_string());
         }
 
@@ -48,16 +46,8 @@ pub fn maven(out: &Outcome) -> String {
         None => return generic::summarize(out),
     };
 
-    let verdict = if success {
-        "BUILD SUCCESS"
-    } else {
-        "BUILD FAILURE"
-    };
-    let symbol = if success && out.code == 0 {
-        "✓"
-    } else {
-        "✗"
-    };
+    let verdict = if success { "BUILD SUCCESS" } else { "BUILD FAILURE" };
+    let symbol = if success && out.code == 0 { "✓" } else { "✗" };
     let head = match &test_summary {
         Some(s) => format!("{symbol} maven: {verdict} · {s}"),
         None => format!("{symbol} maven: {verdict}"),
@@ -161,15 +151,8 @@ mod tests {
 [INFO] Tests run: 12, Failures: 0, Errors: 0, Skipped: 2
 [INFO] BUILD SUCCESS
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
-        assert_eq!(
-            maven(&out),
-            "✓ maven: BUILD SUCCESS · Tests run: 12, Failures: 0, Errors: 0, Skipped: 2"
-        );
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 0 };
+        assert_eq!(maven(&out), "✓ maven: BUILD SUCCESS · Tests run: 12, Failures: 0, Errors: 0, Skipped: 2");
     }
 
     #[test]
@@ -179,11 +162,7 @@ mod tests {
 [INFO] BUILD FAILURE
 [ERROR] To see the full stack trace, re-run with -e.
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 1,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 1 };
         let summary = maven(&out);
         assert!(summary.starts_with("✗ maven: BUILD FAILURE"));
         assert!(summary.contains("cannot find symbol"));
@@ -192,11 +171,7 @@ mod tests {
 
     #[test]
     fn gradle_reports_success() {
-        let out = Outcome {
-            stdout: "BUILD SUCCESSFUL in 3s\n".to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: "BUILD SUCCESSFUL in 3s\n".to_string(), stderr: String::new(), code: 0 };
         assert_eq!(gradle(&out), "✓ gradle: BUILD SUCCESSFUL");
     }
 
@@ -207,11 +182,7 @@ com.example.MathTest > adds FAILED
 > Task :test FAILED
 BUILD FAILED in 4s
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 1,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 1 };
         let summary = gradle(&out);
         assert!(summary.starts_with("✗ gradle: BUILD FAILED"));
         assert!(summary.contains("task :test"));

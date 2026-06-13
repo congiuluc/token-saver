@@ -47,28 +47,17 @@ pub fn summarize(args: &[String], out: &Outcome, extreme: bool) -> String {
         ("git", "log") => git::log(out),
         ("git", "diff") => git::diff(out),
         ("git", "branch") => git::branch(out),
-        ("cargo", "build") | ("cargo", "b") | ("cargo", "check") | ("cargo", "c") => {
-            cargo::build(out)
-        }
+        ("cargo", "build") | ("cargo", "b") | ("cargo", "check") | ("cargo", "c") => cargo::build(out),
         ("cargo", "test") | ("cargo", "t") => cargo::test(out),
         ("docker", "ps") => container::docker_ps(out),
         ("kubectl", "get") => container::kubectl_get(out),
         ("npm", "install") | ("npm", "i") | ("npm", "ci") => node::install(out),
         ("yarn", "install") | ("yarn", "add") | ("yarn", "") => pkg::js_install(out, "yarn"),
-        ("pnpm", "install") | ("pnpm", "i") | ("pnpm", "add") | ("pnpm", "") => {
-            pkg::js_install(out, "pnpm")
-        }
+        ("pnpm", "install") | ("pnpm", "i") | ("pnpm", "add") | ("pnpm", "") => pkg::js_install(out, "pnpm"),
         ("bun", "install") | ("bun", "i") | ("bun", "add") => pkg::js_install(out, "bun"),
-        ("pip", "install") | ("pip", "uninstall") | ("pip3", "install") | ("pip3", "uninstall") => {
-            pkg::pip(out)
-        }
-        ("poetry", "install") | ("poetry", "add") | ("poetry", "update") | ("poetry", "remove") => {
-            pkg::poetry(out)
-        }
-        ("dotnet", "build")
-        | ("dotnet", "publish")
-        | ("dotnet", "pack")
-        | ("dotnet", "msbuild") => dotnet::build(out),
+        ("pip", "install") | ("pip", "uninstall") | ("pip3", "install") | ("pip3", "uninstall") => pkg::pip(out),
+        ("poetry", "install") | ("poetry", "add") | ("poetry", "update") | ("poetry", "remove") => pkg::poetry(out),
+        ("dotnet", "build") | ("dotnet", "publish") | ("dotnet", "pack") | ("dotnet", "msbuild") => dotnet::build(out),
         ("dotnet", "test") => dotnet::test(out),
         ("dotnet", "restore") => dotnet::restore(out),
         ("mvn", _) | ("mvnw", _) => java::maven(out),
@@ -97,16 +86,8 @@ pub fn summarize(args: &[String], out: &Outcome, extreme: bool) -> String {
 /// pasting them into a prompt. When `extreme` is set, compression is far more
 /// aggressive (errors plus a stats footer only).
 pub fn summarize_text(text: &str, extreme: bool) -> String {
-    let out = Outcome {
-        stdout: text.to_string(),
-        stderr: String::new(),
-        code: 0,
-    };
-    let mut body = if extreme {
-        generic::summarize_extreme(&out)
-    } else {
-        generic::summarize(&out)
-    };
+    let out = Outcome { stdout: text.to_string(), stderr: String::new(), code: 0 };
+    let mut body = if extreme { generic::summarize_extreme(&out) } else { generic::summarize(&out) };
     if !body.ends_with('\n') {
         body.push('\n');
     }
@@ -178,10 +159,7 @@ mod tests {
 
     #[test]
     fn rewrites_git_status_to_porcelain() {
-        assert_eq!(
-            rewrite(&args(&["git", "status"])),
-            args(&["git", "status", "--porcelain=v1", "--branch"])
-        );
+        assert_eq!(rewrite(&args(&["git", "status"])), args(&["git", "status", "--porcelain=v1", "--branch"]));
     }
 
     #[test]
@@ -192,11 +170,7 @@ mod tests {
 
     #[test]
     fn summary_always_ends_with_newline() {
-        let out = Outcome {
-            stdout: "hello".to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: "hello".to_string(), stderr: String::new(), code: 0 };
         assert!(summarize(&args(&["echo", "hello"]), &out, false).ends_with('\n'));
     }
 
@@ -214,8 +188,7 @@ mod tests {
     #[test]
     fn routes_dotnet_test() {
         let out = Outcome {
-            stdout: "Passed!  - Failed: 0, Passed: 3, Skipped: 0, Total: 3, Duration: 1 s\n"
-                .to_string(),
+            stdout: "Passed!  - Failed: 0, Passed: 3, Skipped: 0, Total: 3, Duration: 1 s\n".to_string(),
             stderr: String::new(),
             code: 0,
         };
@@ -225,22 +198,15 @@ mod tests {
 
     #[test]
     fn routes_gradle_wrapper_with_path_and_extension() {
-        let out = Outcome {
-            stdout: "BUILD SUCCESSFUL in 2s\n".to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: "BUILD SUCCESSFUL in 2s\n".to_string(), stderr: String::new(), code: 0 };
         let summary = summarize(&args(&["./gradlew.bat", "test"]), &out, false);
         assert!(summary.contains("✓ gradle: BUILD SUCCESSFUL"));
     }
 
     #[test]
     fn detects_eslint_via_npx() {
-        let out = Outcome {
-            stdout: "\n✖ 1 problem (1 error, 0 warnings)\n".to_string(),
-            stderr: String::new(),
-            code: 1,
-        };
+        let out =
+            Outcome { stdout: "\n✖ 1 problem (1 error, 0 warnings)\n".to_string(), stderr: String::new(), code: 1 };
         let summary = summarize(&args(&["npx", "eslint", "."]), &out, false);
         assert!(summary.contains("✗ eslint: 1 problem"));
     }
@@ -269,11 +235,8 @@ mod tests {
 
     #[test]
     fn routes_yarn_install() {
-        let out = Outcome {
-            stdout: "success Saved lockfile.\nDone in 2.0s.\n".to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out =
+            Outcome { stdout: "success Saved lockfile.\nDone in 2.0s.\n".to_string(), stderr: String::new(), code: 0 };
         let summary = summarize(&args(&["yarn", "install"]), &out, false);
         assert!(summary.contains("Done in 2.0s."));
     }
@@ -281,11 +244,7 @@ mod tests {
     #[test]
     fn extreme_mode_compresses_more_than_default() {
         let body: String = (0..200).map(|i| format!("line {i}\n")).collect();
-        let out = Outcome {
-            stdout: body,
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: body, stderr: String::new(), code: 0 };
         let default = summarize(&args(&["some-tool"]), &out, false);
         let extreme = summarize(&args(&["some-tool"]), &out, true);
         assert!(extreme.lines().count() < default.lines().count());

@@ -160,6 +160,8 @@ flowchart LR
 | [`src/metrics.rs`](src/metrics.rs) | JSONL gain logging and the `tokensaver gain` report. |
 | [`src/optimize.rs`](src/optimize.rs) | The `tokensaver optimize` text compactor (preview + apply, token-diff summary). |
 | [`src/assess.rs`](src/assess.rs) | The `tokensaver context` Copilot context inventory (parallel scan, token accounting, Markdown/JSON export). |
+| [`src/gallery.rs`](src/gallery.rs) | The `tokensaver gallery` marketplace: harvest, list, install, remove, and a localhost browser UI. |
+| [`src/update.rs`](src/update.rs) | The `tokensaver update` self-updater (GitHub Releases, checksum verify, in-place replace). |
 | [`src/otel.rs`](src/otel.rs) | Optional OpenTelemetry / OTLP span export. |
 | [`src/init.rs`](src/init.rs) | `init` / `uninit` for Copilot instructions, `AGENTS.md`, and hooks. |
 | [`src/hook.rs`](src/hook.rs) | The `tokensaver hook` `postToolUse` handler. |
@@ -308,8 +310,42 @@ tokensaver tokens --file <path>     Count words for file content
 tokensaver tokens --stdin           Read stdin and count words
 tokensaver optimize --file <path>   Compact a file's text + report token savings
 tokensaver context [category]       Inventory Copilot context objects + token cost
+tokensaver gallery <command>        Harvest/list/install Copilot objects; serve a browser gallery
+tokensaver update [--check|--force] Update tokensaver to the latest release
+tokensaver version | -V             Print the installed version
 tokensaver -h | --help              Show help
 ```
+
+### Check for updates and self-update (`update`)
+
+`tokensaver update` checks the
+[GitHub Releases](https://github.com/congiuluc/TokenSaver/releases) for a newer
+version and, if one exists, downloads the prebuilt archive for your platform,
+verifies its SHA-256 checksum, and replaces the running `tokensaver` (and the
+sibling `ts` alias) in place. It reuses the system's `curl`/`wget` or PowerShell,
+so no extra runtime dependency is added.
+
+```text
+tokensaver version                  Print the installed version
+tokensaver update                   Check for and install the latest version
+tokensaver update --check           Only report whether a newer version exists
+tokensaver update --force           Reinstall the latest version even if up to date
+```
+
+```text
+$ tokensaver update
+tokensaver: current version v0.1.0
+tokensaver: checking congiuluc/TokenSaver for the latest release...
+tokensaver: new version available: v0.1.0 -> v0.2.0
+tokensaver: downloading tokensaver-x86_64-unknown-linux-gnu.tar.gz...
+tokensaver: checksum verified.
+tokensaver: extracting...
+tokensaver: updated to v0.2.0 at /home/user/.local/bin/tokensaver
+```
+
+> If you installed via a system package manager or `cargo install`, prefer
+> updating the same way. `tokensaver update` replaces the binary at its current
+> location, which requires write permission to that directory.
 
 ### Optimize a file's text (`optimize`)
 
@@ -367,6 +403,39 @@ tokensaver context --quiet          Suppress progress messages (-q)
 
 Categories accept singular or plural, case-insensitively: `instructions`,
 `prompts`, `agents` (or `chatmode`), `skills`, `tools` (or `mcp`).
+
+### Gallery / marketplace (`gallery`)
+
+`tokensaver gallery` is a local marketplace for your **user-defined** Copilot
+context objects. It harvests the agents, skills, prompts and custom instructions
+you authored out of your user/device folders (`~/.copilot`, `~/.agents`, the VS
+Code `User/prompts` folder, and home-level `AGENTS.md` /
+`copilot-instructions.md`) into a gallery at `~/.tokensaver/gallery`, so they are
+preserved in one place and can be reinstalled into any workspace on demand.
+Objects provided by VS Code extensions or the installed app are **never**
+harvested.
+
+Harvesting **moves** objects (it removes the originals), so it is a **dry run by
+default** — it prints exactly what it would move and changes nothing until you
+re-run with `--apply`.
+
+```text
+tokensaver gallery harvest                 Dry run: list user objects that would be moved
+tokensaver gallery harvest --apply         Move them into the gallery (removes originals)
+tokensaver gallery list [category]         List stored items (optionally by category)
+tokensaver gallery show <id>               Show details and a content preview
+tokensaver gallery install <id> [--dir <p>] [--force]
+                                           Install an item into a workspace (default: cwd)
+tokensaver gallery remove <id>             Delete an item from the gallery
+tokensaver gallery serve [--port N] [--open]   Browse and install from http://127.0.0.1:7878
+```
+
+Installing an item places it at the standard Copilot path for its category:
+instructions and prompts under `.github/`, skills under `.github/skills/`,
+agents under `.github/agents/` (chat modes under `.github/chatmodes/`), MCP tool
+configs at `.vscode/mcp.json`, and `AGENTS.md` / `copilot-instructions.md`
+content merged into the workspace file. `gallery serve` starts a dependency-free,
+localhost-only web UI to browse items and install them into a folder you choose.
 
 
 ### Examples

@@ -123,11 +123,7 @@ mod tests {
 
     #[test]
     fn tsc_reports_clean() {
-        let out = Outcome {
-            stdout: String::new(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: String::new(), stderr: String::new(), code: 0 };
         assert_eq!(tsc(&out), "✓ tsc: no type errors");
     }
 
@@ -137,11 +133,7 @@ mod tests {
 src/index.ts(12,5): error TS2322: Type 'string' is not assignable to type 'number'.
 Found 1 error in 1 file.
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 2,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 2 };
         let summary = tsc(&out);
         assert!(summary.starts_with("✗ tsc: Found 1 error in 1 file"));
         assert!(summary.contains("error TS2322"));
@@ -149,11 +141,7 @@ Found 1 error in 1 file.
 
     #[test]
     fn eslint_reports_clean() {
-        let out = Outcome {
-            stdout: String::new(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: String::new(), stderr: String::new(), code: 0 };
         assert_eq!(eslint(&out), "✓ eslint: clean");
     }
 
@@ -166,11 +154,7 @@ Found 1 error in 1 file.
 
 ✖ 2 problems (1 error, 1 warning)
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 1,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 1 };
         let summary = eslint(&out);
         assert!(summary.starts_with("✗ eslint: 2 problems (1 error, 1 warning)"));
         assert!(summary.contains("/repo/src/app.js  12:5  error"));

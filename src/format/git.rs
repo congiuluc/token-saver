@@ -7,23 +7,13 @@ use crate::runner::Outcome;
 
 /// Rewrites `git status` to porcelain v1 with branch info for reliable parsing.
 pub fn rewrite_status(_args: &[String]) -> Vec<String> {
-    vec![
-        "git".into(),
-        "status".into(),
-        "--porcelain=v1".into(),
-        "--branch".into(),
-    ]
+    vec!["git".into(), "status".into(), "--porcelain=v1".into(), "--branch".into()]
 }
 
 /// Rewrites `git diff [args]` to `git diff --stat [args]` unless the user
 /// already requested a summary/format flag.
 pub fn rewrite_diff(args: &[String]) -> Vec<String> {
-    if args.iter().any(|a| {
-        matches!(
-            a.as_str(),
-            "--stat" | "--numstat" | "--shortstat" | "--name-only"
-        )
-    }) {
+    if args.iter().any(|a| matches!(a.as_str(), "--stat" | "--numstat" | "--shortstat" | "--name-only")) {
         return args.to_vec();
     }
     let mut out = vec!["git".to_string(), "diff".to_string(), "--stat".to_string()];
@@ -34,13 +24,10 @@ pub fn rewrite_diff(args: &[String]) -> Vec<String> {
 /// Rewrites `git log [args]` to a compact one-line form, capped at 30 entries
 /// unless the user already specified a format or count.
 pub fn rewrite_log(args: &[String]) -> Vec<String> {
-    let has_format = args
+    let has_format = args.iter().any(|a| a.starts_with("--pretty") || a.starts_with("--format") || a == "--oneline");
+    let has_count = args
         .iter()
-        .any(|a| a.starts_with("--pretty") || a.starts_with("--format") || a == "--oneline");
-    let has_count = args.iter().any(|a| {
-        a == "-n"
-            || (a.starts_with('-') && a[1..].chars().all(|c| c.is_ascii_digit()) && a.len() > 1)
-    });
+        .any(|a| a == "-n" || (a.starts_with('-') && a[1..].chars().all(|c| c.is_ascii_digit()) && a.len() > 1));
 
     let mut out = vec!["git".to_string(), "log".to_string()];
     if !has_format {
@@ -199,11 +186,7 @@ mod tests {
     use super::*;
 
     fn outcome(stdout: &str) -> Outcome {
-        Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 0,
-        }
+        Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 0 }
     }
 
     #[test]
@@ -230,13 +213,8 @@ mod tests {
 
     #[test]
     fn separates_staged_and_modified() {
-        let summary = status(&outcome(
-            "## dev\nM  staged.rs\n M worktree.rs\nMM both.rs\n",
-        ));
-        assert_eq!(
-            summary,
-            "* dev\n+ 2  staged.rs, both.rs\n~ 2  worktree.rs, both.rs"
-        );
+        let summary = status(&outcome("## dev\nM  staged.rs\n M worktree.rs\nMM both.rs\n"));
+        assert_eq!(summary, "* dev\n+ 2  staged.rs, both.rs\n~ 2  worktree.rs, both.rs");
     }
 
     #[test]
@@ -263,20 +241,13 @@ mod tests {
 
     #[test]
     fn rewrite_diff_respects_existing_stat_flag() {
-        let a = vec![
-            "git".to_string(),
-            "diff".to_string(),
-            "--numstat".to_string(),
-        ];
+        let a = vec!["git".to_string(), "diff".to_string(), "--numstat".to_string()];
         assert_eq!(rewrite_diff(&a), a);
     }
 
     #[test]
     fn rewrite_log_adds_oneline_and_limit() {
-        assert_eq!(
-            rewrite_log(&["git".into(), "log".into()]),
-            vec!["git", "log", "--oneline", "-30"]
-        );
+        assert_eq!(rewrite_log(&["git".into(), "log".into()]), vec!["git", "log", "--oneline", "-30"]);
     }
 
     #[test]

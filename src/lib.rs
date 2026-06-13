@@ -15,6 +15,9 @@
 //!   tokensaver tokens ...                 Calculate tokens for prompt text or file content.
 //!   tokensaver optimize --file <path>     Compact a file's text and report token savings.
 //!   tokensaver context [category]         Inventory Copilot context objects and their token cost.
+//!   tokensaver gallery <command>          Harvest, list, install, or serve a local Copilot object gallery.
+//!   tokensaver update [--check|--force]   Update tokensaver to the latest release.
+//!   tokensaver version | --version | -V   Print the installed version.
 //!   tokensaver -h | --help                Show usage.
 
 use std::env;
@@ -25,6 +28,7 @@ use std::time::Instant;
 
 pub mod assess;
 pub mod format;
+pub mod gallery;
 pub mod hook;
 pub mod init;
 pub mod metrics;
@@ -32,6 +36,7 @@ pub mod optimize;
 pub mod otel;
 pub mod runner;
 pub mod tokenizer;
+pub mod update;
 
 /// Runs the `tokensaver` CLI and returns the process exit code.
 pub fn run() -> ExitCode {
@@ -46,6 +51,16 @@ pub fn run() -> ExitCode {
         "-h" | "--help" => {
             print_usage();
             return ExitCode::SUCCESS;
+        }
+        "-V" | "--version" | "version" => {
+            println!("tokensaver {}", env!("CARGO_PKG_VERSION"));
+            return ExitCode::SUCCESS;
+        }
+        "update" | "upgrade" | "self-update" => {
+            return update::run(&args[1..]);
+        }
+        "gallery" | "market" | "marketplace" => {
+            return gallery::run(&args[1..]);
         }
         "--raw" => {
             args.remove(0);
@@ -63,10 +78,7 @@ pub fn run() -> ExitCode {
             if args.iter().any(|a| a == "--hook" || a == "--hooks") {
                 return match init::run_hook(global) {
                     Ok(path) => {
-                        println!(
-                            "tokensaver: wrote Copilot hook config at {}",
-                            path.display()
-                        );
+                        println!("tokensaver: wrote Copilot hook config at {}", path.display());
                         ExitCode::SUCCESS
                     }
                     Err(err) => {
@@ -84,10 +96,7 @@ pub fn run() -> ExitCode {
             };
             return match init::run(scope) {
                 Ok(path) => {
-                    println!(
-                        "tokensaver: updated Copilot instructions at {}",
-                        path.display()
-                    );
+                    println!("tokensaver: updated Copilot instructions at {}", path.display());
                     ExitCode::SUCCESS
                 }
                 Err(err) => {
@@ -101,10 +110,7 @@ pub fn run() -> ExitCode {
             if args.iter().any(|a| a == "--hook" || a == "--hooks") {
                 return match init::uninstall_hook(global) {
                     Ok(Some(path)) => {
-                        println!(
-                            "tokensaver: removed Copilot hook config at {}",
-                            path.display()
-                        );
+                        println!("tokensaver: removed Copilot hook config at {}", path.display());
                         ExitCode::SUCCESS
                     }
                     Ok(None) => {
@@ -126,10 +132,7 @@ pub fn run() -> ExitCode {
             };
             return match init::uninstall(scope) {
                 Ok(Some(path)) => {
-                    println!(
-                        "tokensaver: removed Copilot instructions from {}",
-                        path.display()
-                    );
+                    println!("tokensaver: removed Copilot instructions from {}", path.display());
                     ExitCode::SUCCESS
                 }
                 Ok(None) => {
@@ -187,13 +190,7 @@ pub fn run() -> ExitCode {
     let elapsed = started.elapsed();
     print!("{summary}");
 
-    metrics::record(
-        "run",
-        &args.join(" "),
-        &format!("{}{}", outcome.stdout, outcome.stderr),
-        &summary,
-        elapsed,
-    );
+    metrics::record("run", &args.join(" "), &format!("{}{}", outcome.stdout, outcome.stderr), &summary, elapsed);
 
     exit_code(outcome.code)
 }
@@ -256,14 +253,8 @@ fn run_gain(args: &[String]) -> ExitCode {
 fn print_gain() -> ExitCode {
     let totals = metrics::read_totals();
     let active_saved = totals.raw_tokens.saturating_sub(totals.out_tokens);
-    let active_pct = if totals.raw_tokens > 0 {
-        active_saved as f64 / totals.raw_tokens as f64 * 100.0
-    } else {
-        0.0
-    };
-    let heuristic_saved = totals
-        .raw_tokens_heuristic
-        .saturating_sub(totals.out_tokens_heuristic);
+    let active_pct = if totals.raw_tokens > 0 { active_saved as f64 / totals.raw_tokens as f64 * 100.0 } else { 0.0 };
+    let heuristic_saved = totals.raw_tokens_heuristic.saturating_sub(totals.out_tokens_heuristic);
     let heuristic_pct = if totals.raw_tokens_heuristic > 0 {
         heuristic_saved as f64 / totals.raw_tokens_heuristic as f64 * 100.0
     } else {
@@ -283,18 +274,10 @@ fn print_gain() -> ExitCode {
     println!("  heuristic saved:        {heuristic_saved} ({heuristic_pct:.1}%)");
 
     if totals.model_token_samples > 0 {
-        let model_saved = totals
-            .raw_tokens_model
-            .saturating_sub(totals.out_tokens_model);
-        let model_pct = if totals.raw_tokens_model > 0 {
-            model_saved as f64 / totals.raw_tokens_model as f64 * 100.0
-        } else {
-            0.0
-        };
-        println!(
-            "  model raw tokens:       {} ({} samples)",
-            totals.raw_tokens_model, totals.model_token_samples
-        );
+        let model_saved = totals.raw_tokens_model.saturating_sub(totals.out_tokens_model);
+        let model_pct =
+            if totals.raw_tokens_model > 0 { model_saved as f64 / totals.raw_tokens_model as f64 * 100.0 } else { 0.0 };
+        println!("  model raw tokens:       {} ({} samples)", totals.raw_tokens_model, totals.model_token_samples);
         println!("  model out tokens:       {}", totals.out_tokens_model);
         println!("  model saved:            {model_saved} ({model_pct:.1}%)");
     } else {
@@ -412,6 +395,9 @@ fn print_usage() {
          \x20 tokensaver gain --reset            Reset logged token savings\n\
          \x20 tokensaver optimize --file <p>     Compact file text; --preview shows it + token diff\n\
          \x20 tokensaver context [category]      Inventory Copilot context objects + token cost\n\
+         \x20 tokensaver gallery <command>      Harvest/list/install Copilot objects; serve a browser gallery\n\
+         \x20 tokensaver update [--check|--force] Update tokensaver to the latest release\n\
+         \x20 tokensaver version | -V            Print the installed version\n\
          \x20 tokensaver -h | --help              Show this help\n\
          \n\
          EXAMPLES:\n\

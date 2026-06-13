@@ -79,8 +79,7 @@ pub fn poetry(out: &Outcome) -> String {
         return lines.join("\n");
     }
 
-    let detail = summary
-        .unwrap_or_else(|| format!("{installs} installed, {updates} updated, {removes} removed"));
+    let detail = summary.unwrap_or_else(|| format!("{installs} installed, {updates} updated, {removes} removed"));
     format!("✓ poetry: {detail}")
 }
 
@@ -145,11 +144,7 @@ Requirement already satisfied: idna in /usr/lib
 Installing collected packages: requests
 Successfully installed requests-2.31.0
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 0 };
         assert_eq!(pip(&out), "Successfully installed requests-2.31.0");
     }
 
@@ -157,8 +152,7 @@ Successfully installed requests-2.31.0
     fn pip_surfaces_error_and_exit() {
         let out = Outcome {
             stdout: String::new(),
-            stderr: "ERROR: Could not find a version that satisfies the requirement foo\n"
-                .to_string(),
+            stderr: "ERROR: Could not find a version that satisfies the requirement foo\n".to_string(),
             code: 1,
         };
         let summary = pip(&out);
@@ -175,11 +169,7 @@ Package operations: 3 installs, 1 update, 0 removals
 
   • Installing certifi (2023.7.22)
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 0 };
         assert_eq!(poetry(&out), "✓ poetry: 3 installs, 1 update, 0 removals");
     }
 
@@ -192,14 +182,7 @@ yarn install v1.22.19
 success Saved lockfile.
 Done in 3.45s.
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
-        assert_eq!(
-            js_install(&out, "yarn"),
-            "success Saved lockfile.\nDone in 3.45s."
-        );
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 0 };
+        assert_eq!(js_install(&out, "yarn"), "success Saved lockfile.\nDone in 3.45s.");
     }
 }

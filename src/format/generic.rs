@@ -46,16 +46,8 @@ fn summarize_mode(out: &Outcome, extreme: bool) -> String {
     }
 
     let lines = normalize(&text);
-    let max = if extreme {
-        MAX_LINES_EXTREME
-    } else {
-        MAX_LINES
-    };
-    let mut body = if lines.len() <= max {
-        lines.join("\n")
-    } else {
-        condense(&lines, extreme)
-    };
+    let max = if extreme { MAX_LINES_EXTREME } else { MAX_LINES };
+    let mut body = if lines.len() <= max { lines.join("\n") } else { condense(&lines, extreme) };
 
     if out.code != 0 {
         if !body.is_empty() {
@@ -143,9 +135,7 @@ fn is_error(line: &str) -> bool {
 /// Returns `true` when a line carries warning-level signal.
 fn is_warning(line: &str) -> bool {
     let l = line.to_ascii_lowercase();
-    ["warning", "warn:", "warn ", "deprecat"]
-        .iter()
-        .any(|kw| l.contains(kw))
+    ["warning", "warn:", "warn ", "deprecat"].iter().any(|kw| l.contains(kw))
 }
 
 /// Returns `true` when a line looks like a result/summary worth keeping.
@@ -200,16 +190,7 @@ fn normalize(text: &str) -> Vec<String> {
             _ => deduped.push((line, 1)),
         }
     }
-    deduped
-        .into_iter()
-        .map(|(line, count)| {
-            if count > 1 {
-                format!("{line}  (x{count})")
-            } else {
-                line
-            }
-        })
-        .collect()
+    deduped.into_iter().map(|(line, count)| if count > 1 { format!("{line}  (x{count})") } else { line }).collect()
 }
 
 /// Removes ANSI/VT escape sequences (CSI and OSC) from `input`.
@@ -298,11 +279,7 @@ mod tests {
     }
 
     fn outcome(stdout: &str, code: i32) -> Outcome {
-        Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code,
-        }
+        Outcome { stdout: stdout.to_string(), stderr: String::new(), code }
     }
 
     #[test]

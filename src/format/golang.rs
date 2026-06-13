@@ -94,11 +94,7 @@ mod tests {
 
     #[test]
     fn build_reports_ok() {
-        let out = Outcome {
-            stdout: String::new(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: String::new(), stderr: String::new(), code: 0 };
         assert_eq!(build(&out), "✓ go build ok");
     }
 
@@ -117,11 +113,7 @@ mod tests {
     #[test]
     fn test_reports_pass() {
         let stdout = "ok  \texample/pkg\t0.123s\nok  \texample/pkg2\t0.045s\n";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 0 };
         assert_eq!(test(&out), "✓ go test: 2 packages ok");
     }
 
@@ -133,11 +125,7 @@ mod tests {
 FAIL
 FAIL\texample/pkg\t0.002s
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 1,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 1 };
         let summary = test(&out);
         assert!(summary.starts_with("✗ go test: 1 test(s) failed"));
         assert!(summary.contains("- TestAdd"));

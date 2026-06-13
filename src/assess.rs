@@ -37,17 +37,7 @@ const MAX_DEPTH: usize = 12;
 /// Files larger than this are skipped (they are never Copilot context objects).
 const MAX_FILE_BYTES: u64 = 1_000_000;
 /// Directories never descended into during a workspace scan.
-const WORKSPACE_PRUNE: &[&str] = &[
-    "node_modules",
-    "target",
-    ".git",
-    "dist",
-    "build",
-    "out",
-    "bin",
-    "obj",
-    ".next",
-];
+const WORKSPACE_PRUNE: &[&str] = &["node_modules", "target", ".git", "dist", "build", "out", "bin", "obj", ".next"];
 /// Directories never descended into during a user/device scan. `node_modules` is
 /// pruned to keep the device-wide walk fast; skills bundled deep inside an
 /// extension's `node_modules` are therefore not counted.
@@ -69,16 +59,11 @@ pub enum Category {
 
 impl Category {
     /// Display order of the categories in the report.
-    const ALL: [Category; 5] = [
-        Category::Instructions,
-        Category::Prompts,
-        Category::Agents,
-        Category::Skills,
-        Category::Tools,
-    ];
+    pub(crate) const ALL: [Category; 5] =
+        [Category::Instructions, Category::Prompts, Category::Agents, Category::Skills, Category::Tools];
 
     /// Human-readable category label.
-    fn label(self) -> &'static str {
+    pub(crate) fn label(self) -> &'static str {
         match self {
             Category::Instructions => "Instructions",
             Category::Prompts => "Prompts",
@@ -89,7 +74,7 @@ impl Category {
     }
 
     /// Lowercase machine name used in JSON output.
-    fn key(self) -> &'static str {
+    pub(crate) fn key(self) -> &'static str {
         match self {
             Category::Instructions => "instructions",
             Category::Prompts => "prompts",
@@ -187,10 +172,7 @@ pub fn run(args: &[String]) -> ExitCode {
         match fs::write(path, markdown) {
             Ok(()) => {
                 if !opts.quiet {
-                    eprintln!(
-                        "tokensaver: wrote Markdown report to {}",
-                        display_path(path)
-                    );
+                    eprintln!("tokensaver: wrote Markdown report to {}", display_path(path));
                 }
             }
             Err(err) => {
@@ -242,29 +224,18 @@ fn scan_roots(roots: &[Root], opts: &Options) -> Vec<PathBuf> {
                 if prune.contains(&name.to_string_lossy().as_ref()) {
                     continue;
                 }
-                tasks.push(Task {
-                    dir: entry.path(),
-                    prune,
-                    depth: 1,
-                });
+                tasks.push(Task { dir: entry.path(), prune, depth: 1 });
             } else if file_type.is_file() && classify(&entry.path()).is_some() {
                 candidates.push(entry.path());
             }
         }
     }
 
-    let worker_count = thread::available_parallelism()
-        .map(|n| n.get())
-        .unwrap_or(4)
-        .clamp(1, 16)
-        .min(tasks.len().max(1));
+    let worker_count =
+        thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(1, 16).min(tasks.len().max(1));
 
     if progress {
-        eprintln!(
-            "tokensaver: walking {} directories with {} workers…",
-            fmt_num(tasks.len() as u64),
-            worker_count
-        );
+        eprintln!("tokensaver: walking {} directories with {} workers…", fmt_num(tasks.len() as u64), worker_count);
     }
 
     let queue = Arc::new(Mutex::new(tasks));
@@ -310,37 +281,24 @@ fn scan_roots(roots: &[Root], opts: &Options) -> Vec<PathBuf> {
 
 /// Parses the argument vector for the `context` subcommand.
 fn parse_args(args: &[String]) -> Result<Options, String> {
-    let mut opts = Options {
-        category: None,
-        top: 5,
-        window: DEFAULT_WINDOW,
-        scope: None,
-        json: false,
-        md: None,
-        quiet: false,
-    };
+    let mut opts =
+        Options { category: None, top: 5, window: DEFAULT_WINDOW, scope: None, json: false, md: None, quiet: false };
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
             "--category" | "-c" => {
                 let value = args.get(i + 1).ok_or("--category requires a name")?;
-                opts.category = Some(
-                    parse_category(value).ok_or_else(|| format!("unknown category '{value}'"))?,
-                );
+                opts.category = Some(parse_category(value).ok_or_else(|| format!("unknown category '{value}'"))?);
                 i += 2;
             }
             "--top" => {
                 let value = args.get(i + 1).ok_or("--top requires a number")?;
-                opts.top = value
-                    .parse()
-                    .map_err(|_| "--top requires a number".to_string())?;
+                opts.top = value.parse().map_err(|_| "--top requires a number".to_string())?;
                 i += 2;
             }
             "--window" => {
                 let value = args.get(i + 1).ok_or("--window requires a number")?;
-                opts.window = value
-                    .parse()
-                    .map_err(|_| "--window requires a number".to_string())?;
+                opts.window = value.parse().map_err(|_| "--window requires a number".to_string())?;
                 if opts.window == 0 {
                     return Err("--window must be greater than 0".to_string());
                 }
@@ -374,9 +332,7 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
                 if opts.category.is_some() {
                     return Err(format!("unexpected argument '{other}'"));
                 }
-                opts.category = Some(
-                    parse_category(other).ok_or_else(|| format!("unknown category '{other}'"))?,
-                );
+                opts.category = Some(parse_category(other).ok_or_else(|| format!("unknown category '{other}'"))?);
                 i += 1;
             }
         }
@@ -393,20 +349,14 @@ fn gather_roots(scope: Option<Scope>) -> Vec<Root> {
 
     if want_workspace {
         if let Ok(cwd) = env::current_dir() {
-            roots.push(Root {
-                path: cwd,
-                scope: Scope::Workspace,
-            });
+            roots.push(Root { path: cwd, scope: Scope::Workspace });
         }
     }
 
     if want_user {
         for path in user_roots() {
             if path.exists() {
-                roots.push(Root {
-                    path,
-                    scope: Scope::User,
-                });
+                roots.push(Root { path, scope: Scope::User });
             }
         }
     }
@@ -472,15 +422,7 @@ fn vscode_prompt_dirs(home: &Path) -> Vec<PathBuf> {
 /// Best-effort directories holding skills bundled with the installed VS Code app.
 fn installed_app_skill_dirs() -> Vec<PathBuf> {
     let mut dirs = Vec::new();
-    const SUBPATH: [&str; 7] = [
-        "resources",
-        "app",
-        "extensions",
-        "copilot",
-        "assets",
-        "prompts",
-        "skills",
-    ];
+    const SUBPATH: [&str; 7] = ["resources", "app", "extensions", "copilot", "assets", "prompts", "skills"];
 
     #[cfg(target_os = "windows")]
     {
@@ -503,9 +445,7 @@ fn installed_app_skill_dirs() -> Vec<PathBuf> {
     #[cfg(target_os = "macos")]
     {
         for name in ["Visual Studio Code", "Visual Studio Code - Insiders"] {
-            let base = PathBuf::from("/Applications")
-                .join(format!("{name}.app"))
-                .join("Contents");
+            let base = PathBuf::from("/Applications").join(format!("{name}.app")).join("Contents");
             dirs.push(join_all(&base, &SUBPATH));
         }
     }
@@ -557,7 +497,7 @@ fn walk(dir: &Path, depth: usize, prune: &[&str], out: &mut Vec<PathBuf>) {
 }
 
 /// Classifies a file path into a context category by its name, or `None`.
-fn classify(path: &Path) -> Option<Category> {
+pub(crate) fn classify(path: &Path) -> Option<Category> {
     let name = path.file_name()?.to_string_lossy().to_ascii_lowercase();
     if name == "copilot-instructions.md" || name == "agents.md" {
         return Some(Category::Instructions);
@@ -588,10 +528,7 @@ fn build_found(candidates: &[PathBuf], filter: Option<Category>, quiet: bool) ->
     }
 
     if !quiet {
-        eprintln!(
-            "tokensaver: reading and counting tokens for {} candidate objects\u{2026}",
-            total
-        );
+        eprintln!("tokensaver: reading and counting tokens for {} candidate objects\u{2026}", total);
     }
     let started = Instant::now();
 
@@ -599,11 +536,7 @@ fn build_found(candidates: &[PathBuf], filter: Option<Category>, quiet: bool) ->
     // dominant cost so this scales close to linearly with available cores. Results
     // are written into per-index slots so the final output stays deterministic
     // regardless of completion order.
-    let worker_count = thread::available_parallelism()
-        .map(|n| n.get())
-        .unwrap_or(4)
-        .clamp(1, 16)
-        .min(total);
+    let worker_count = thread::available_parallelism().map(|n| n.get()).unwrap_or(4).clamp(1, 16).min(total);
 
     let mut slots: Vec<Option<(PathBuf, Found)>> = (0..total).map(|_| None).collect();
     let next = AtomicUsize::new(0);
@@ -692,27 +625,10 @@ fn analyze_one(path: &Path, filter: Option<Category>) -> Option<(PathBuf, Found)
     let description = front.get("description").cloned();
     let apply_to = front.get("applyto").cloned();
     let desc_tokens = description.as_deref().map(tokens_of).unwrap_or(0);
-    let servers = if category == Category::Tools {
-        Some(count_servers(&content))
-    } else {
-        None
-    };
-    let tools_declared = if category == Category::Agents {
-        agent_tools(&content)
-    } else {
-        None
-    };
-    let name = path
-        .file_name()
-        .map(|n| n.to_string_lossy().to_ascii_lowercase())
-        .unwrap_or_default();
-    let always_on_tokens = always_on(
-        category,
-        &name,
-        full_tokens,
-        desc_tokens,
-        apply_to.as_deref(),
-    );
+    let servers = if category == Category::Tools { Some(count_servers(&content)) } else { None };
+    let tools_declared = if category == Category::Agents { agent_tools(&content) } else { None };
+    let name = path.file_name().map(|n| n.to_string_lossy().to_ascii_lowercase()).unwrap_or_default();
+    let always_on_tokens = always_on(category, &name, full_tokens, desc_tokens, apply_to.as_deref());
 
     Some((
         canonical,
@@ -736,13 +652,7 @@ fn tokens_of(text: &str) -> u64 {
 }
 
 /// Computes the always-on token cost of an object given its category and metadata.
-fn always_on(
-    category: Category,
-    name: &str,
-    full_tokens: u64,
-    desc_tokens: u64,
-    apply_to: Option<&str>,
-) -> u64 {
+fn always_on(category: Category, name: &str, full_tokens: u64, desc_tokens: u64, apply_to: Option<&str>) -> u64 {
     match category {
         Category::Instructions => {
             if name == "copilot-instructions.md" || name == "agents.md" {
@@ -871,10 +781,7 @@ fn identity(item: &Found) -> String {
             .map(|n| n.to_string_lossy().to_ascii_lowercase())
             .unwrap_or_else(|| "skill".to_string())
     } else {
-        item.path
-            .file_name()
-            .map(|n| n.to_string_lossy().to_ascii_lowercase())
-            .unwrap_or_default()
+        item.path.file_name().map(|n| n.to_string_lossy().to_ascii_lowercase()).unwrap_or_default()
     }
 }
 
@@ -882,11 +789,7 @@ fn identity(item: &Found) -> String {
 fn print_report(found: &[Found], opts: &Options, root_count: usize) {
     println!("tokensaver — Copilot context inventory");
     println!("  tokenizer:    {}", tokenizer::active_mode().label());
-    println!(
-        "  scanned:      {} files across {} roots",
-        found.len(),
-        root_count
-    );
+    println!("  scanned:      {} files across {} roots", found.len(), root_count);
     println!("  window:       {} tokens", fmt_num(opts.window));
     if let Some(cat) = opts.category {
         println!("  category:     {}", cat.label());
@@ -919,18 +822,10 @@ fn print_report(found: &[Found], opts: &Options, root_count: usize) {
             _ => format!("{} always-on", fmt_num(cat_always)),
         };
         println!();
-        println!(
-            "{} ({} files, {} tokens; {})",
-            category.label(),
-            items.len(),
-            fmt_num(cat_full),
-            suffix
-        );
+        println!("{} ({} files, {} tokens; {})", category.label(), items.len(), fmt_num(cat_full), suffix);
         for item in items {
             let mut tags = String::new();
-            if item.always_on_tokens > 0
-                && matches!(category, Category::Instructions | Category::Tools)
-            {
+            if item.always_on_tokens > 0 && matches!(category, Category::Instructions | Category::Tools) {
                 tags.push_str("  [always-on]");
             }
             if let Some(n) = item.servers {
@@ -942,12 +837,7 @@ fn print_report(found: &[Found], opts: &Options, root_count: usize) {
             if item.duplicate {
                 tags.push_str("  [dup]");
             }
-            println!(
-                "  {:>8}  {}{}",
-                fmt_num(item.full_tokens),
-                display_path(&item.path),
-                tags
-            );
+            println!("  {:>8}  {}{}", fmt_num(item.full_tokens), display_path(&item.path), tags);
         }
     }
 
@@ -978,11 +868,7 @@ fn print_summary(found: &[Found], opts: &Options, always_on_total: u64, full_tot
         if shown > 0 {
             println!("  top consumers:");
             for item in top.into_iter().take(shown) {
-                println!(
-                    "    {:>8}  {}",
-                    fmt_num(item.full_tokens),
-                    display_path(&item.path)
-                );
+                println!("    {:>8}  {}", fmt_num(item.full_tokens), display_path(&item.path));
             }
         }
     }
@@ -1001,10 +887,7 @@ fn print_summary(found: &[Found], opts: &Options, always_on_total: u64, full_tot
     for item in found.iter().filter(|f| f.duplicate) {
         let id = identity(item);
         if dup_seen.insert(id.clone()) {
-            let count = found
-                .iter()
-                .filter(|f| f.duplicate && identity(f) == id)
-                .count();
+            let count = found.iter().filter(|f| f.duplicate && identity(f) == id).count();
             warnings.push(format!(
                 "duplicate {} '{}' in {} locations",
                 item.category.label().to_ascii_lowercase(),
@@ -1037,15 +920,8 @@ fn build_markdown(found: &[Found], opts: &Options, root_count: usize) -> String 
 
     let mut md = String::new();
     md.push_str("# Copilot context inventory\n\n");
-    md.push_str(&format!(
-        "- **Tokenizer:** {}\n",
-        tokenizer::active_mode().label()
-    ));
-    md.push_str(&format!(
-        "- **Scanned:** {} objects across {} roots\n",
-        fmt_num(found.len() as u64),
-        root_count
-    ));
+    md.push_str(&format!("- **Tokenizer:** {}\n", tokenizer::active_mode().label()));
+    md.push_str(&format!("- **Scanned:** {} objects across {} roots\n", fmt_num(found.len() as u64), root_count));
     md.push_str(&format!("- **Window:** {} tokens\n", fmt_num(opts.window)));
     if let Some(cat) = opts.category {
         md.push_str(&format!("- **Category filter:** {}\n", cat.label()));
@@ -1074,12 +950,7 @@ fn build_markdown(found: &[Found], opts: &Options, root_count: usize) -> String 
         items.sort_by_key(|f| std::cmp::Reverse(f.full_tokens));
         let cat_full: u64 = items.iter().map(|f| f.full_tokens).sum();
 
-        md.push_str(&format!(
-            "\n## {} ({} files, {} tokens)\n\n",
-            category.label(),
-            items.len(),
-            fmt_num(cat_full)
-        ));
+        md.push_str(&format!("\n## {} ({} files, {} tokens)\n\n", category.label(), items.len(), fmt_num(cat_full)));
         md.push_str("| Full tokens | Always-on | Notes | Path |\n");
         md.push_str("| ---: | ---: | --- | --- |\n");
         for item in items {
@@ -1097,11 +968,7 @@ fn build_markdown(found: &[Found], opts: &Options, root_count: usize) -> String 
                 "| {} | {} | {} | {} |\n",
                 fmt_num(item.full_tokens),
                 fmt_num(item.always_on_tokens),
-                if notes.is_empty() {
-                    "—".to_string()
-                } else {
-                    notes.join(", ")
-                },
+                if notes.is_empty() { "—".to_string() } else { notes.join(", ") },
                 display_path(&item.path)
             ));
         }
@@ -1115,11 +982,7 @@ fn build_markdown(found: &[Found], opts: &Options, root_count: usize) -> String 
             md.push_str("\n## Top consumers\n\n");
             md.push_str("| Full tokens | Path |\n| ---: | --- |\n");
             for item in top.into_iter().take(shown) {
-                md.push_str(&format!(
-                    "| {} | {} |\n",
-                    fmt_num(item.full_tokens),
-                    display_path(&item.path)
-                ));
+                md.push_str(&format!("| {} | {} |\n", fmt_num(item.full_tokens), display_path(&item.path)));
             }
         }
     }
@@ -1130,10 +993,7 @@ fn build_markdown(found: &[Found], opts: &Options, root_count: usize) -> String 
 /// Emits a machine-readable JSON document of the inventory.
 fn print_json(found: &[Found], opts: &Options) {
     let mut out = String::from("{");
-    out.push_str(&format!(
-        "\"tokenizer\":\"{}\",",
-        tokenizer::active_mode().label()
-    ));
+    out.push_str(&format!("\"tokenizer\":\"{}\",", tokenizer::active_mode().label()));
     out.push_str(&format!("\"window\":{},", opts.window));
 
     let always_on_total: u64 = found.iter().map(|f| f.always_on_tokens).sum();
@@ -1148,10 +1008,7 @@ fn print_json(found: &[Found], opts: &Options) {
         }
         out.push('{');
         out.push_str(&format!("\"category\":\"{}\",", item.category.key()));
-        out.push_str(&format!(
-            "\"path\":\"{}\",",
-            json_escape(&display_path(&item.path))
-        ));
+        out.push_str(&format!("\"path\":\"{}\",", json_escape(&display_path(&item.path))));
         out.push_str(&format!("\"fullTokens\":{},", item.full_tokens));
         out.push_str(&format!("\"alwaysOnTokens\":{},", item.always_on_tokens));
         out.push_str(&format!("\"bytes\":{},", item.bytes));
@@ -1229,10 +1086,8 @@ fn pct(n: u64, window: u64) -> String {
 }
 
 /// Returns the user's home directory, honoring `USERPROFILE` then `HOME`.
-fn home_dir() -> Option<PathBuf> {
-    env::var_os("USERPROFILE")
-        .or_else(|| env::var_os("HOME"))
-        .map(PathBuf::from)
+pub(crate) fn home_dir() -> Option<PathBuf> {
+    env::var_os("USERPROFILE").or_else(|| env::var_os("HOME")).map(PathBuf::from)
 }
 
 #[cfg(test)]
@@ -1241,38 +1096,14 @@ mod tests {
 
     #[test]
     fn classify_maps_known_filenames() {
-        assert_eq!(
-            classify(Path::new("x/copilot-instructions.md")),
-            Some(Category::Instructions)
-        );
-        assert_eq!(
-            classify(Path::new("AGENTS.md")),
-            Some(Category::Instructions)
-        );
-        assert_eq!(
-            classify(Path::new("a/react.instructions.md")),
-            Some(Category::Instructions)
-        );
-        assert_eq!(
-            classify(Path::new("a/build.prompt.md")),
-            Some(Category::Prompts)
-        );
-        assert_eq!(
-            classify(Path::new("a/plan.chatmode.md")),
-            Some(Category::Agents)
-        );
-        assert_eq!(
-            classify(Path::new("a/explore.agent.md")),
-            Some(Category::Agents)
-        );
-        assert_eq!(
-            classify(Path::new("skills/docx/SKILL.md")),
-            Some(Category::Skills)
-        );
-        assert_eq!(
-            classify(Path::new(".vscode/mcp.json")),
-            Some(Category::Tools)
-        );
+        assert_eq!(classify(Path::new("x/copilot-instructions.md")), Some(Category::Instructions));
+        assert_eq!(classify(Path::new("AGENTS.md")), Some(Category::Instructions));
+        assert_eq!(classify(Path::new("a/react.instructions.md")), Some(Category::Instructions));
+        assert_eq!(classify(Path::new("a/build.prompt.md")), Some(Category::Prompts));
+        assert_eq!(classify(Path::new("a/plan.chatmode.md")), Some(Category::Agents));
+        assert_eq!(classify(Path::new("a/explore.agent.md")), Some(Category::Agents));
+        assert_eq!(classify(Path::new("skills/docx/SKILL.md")), Some(Category::Skills));
+        assert_eq!(classify(Path::new(".vscode/mcp.json")), Some(Category::Tools));
         assert_eq!(classify(Path::new("src/main.rs")), None);
         assert_eq!(classify(Path::new("README.md")), None);
     }
@@ -1291,10 +1122,7 @@ mod tests {
     fn frontmatter_extracts_description_and_applyto() {
         let content = "---\ndescription: A test skill\napplyTo: \"**/*.ts\"\n---\n# Body\n";
         let front = parse_frontmatter(content);
-        assert_eq!(
-            front.get("description").map(String::as_str),
-            Some("A test skill")
-        );
+        assert_eq!(front.get("description").map(String::as_str), Some("A test skill"));
         assert_eq!(front.get("applyto").map(String::as_str), Some("**/*.ts"));
     }
 
@@ -1316,38 +1144,11 @@ mod tests {
     #[test]
     fn always_on_rules_per_category() {
         // copilot-instructions.md is always full.
-        assert_eq!(
-            always_on(
-                Category::Instructions,
-                "copilot-instructions.md",
-                100,
-                10,
-                None
-            ),
-            100
-        );
+        assert_eq!(always_on(Category::Instructions, "copilot-instructions.md", 100, 10, None), 100);
         // scoped instructions contribute nothing always-on.
-        assert_eq!(
-            always_on(
-                Category::Instructions,
-                "x.instructions.md",
-                100,
-                10,
-                Some("**/*.ts")
-            ),
-            0
-        );
+        assert_eq!(always_on(Category::Instructions, "x.instructions.md", 100, 10, Some("**/*.ts")), 0);
         // broad instructions are always-on in full.
-        assert_eq!(
-            always_on(
-                Category::Instructions,
-                "x.instructions.md",
-                100,
-                10,
-                Some("**")
-            ),
-            100
-        );
+        assert_eq!(always_on(Category::Instructions, "x.instructions.md", 100, 10, Some("**")), 100);
         // skills contribute only their description.
         assert_eq!(always_on(Category::Skills, "skill.md", 5000, 42, None), 42);
         // tools count in full.
@@ -1442,10 +1243,7 @@ mod tests {
         let mut out = Vec::new();
         walk(&base, 0, WORKSPACE_PRUNE, &mut out);
 
-        let names: Vec<String> = out
-            .iter()
-            .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
-            .collect();
+        let names: Vec<String> = out.iter().map(|p| p.file_name().unwrap().to_string_lossy().to_string()).collect();
         assert!(names.iter().any(|n| n == "copilot-instructions.md"));
         assert!(names.iter().any(|n| n == "AGENTS.md"));
         // Pruned: SKILL.md under node_modules must not appear.

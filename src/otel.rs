@@ -110,10 +110,7 @@ fn service_name() -> String {
 
 /// Returns the trimmed value of `var` when it is set and non-empty.
 fn non_empty_var(var: &str) -> Option<String> {
-    env::var(var)
-        .ok()
-        .map(|value| value.trim().to_string())
-        .filter(|value| !value.is_empty())
+    env::var(var).ok().map(|value| value.trim().to_string()).filter(|value| !value.is_empty())
 }
 
 /// Builds the OTLP/HTTP JSON traces document for a single span.
@@ -149,20 +146,12 @@ fn build_payload(span: &Span) -> String {
 
 /// Formats an OTLP string-valued attribute.
 fn attr_str(key: &str, value: &str) -> String {
-    format!(
-        "{{\"key\":\"{}\",\"value\":{{\"stringValue\":\"{}\"}}}}",
-        escape(key),
-        escape(value)
-    )
+    format!("{{\"key\":\"{}\",\"value\":{{\"stringValue\":\"{}\"}}}}", escape(key), escape(value))
 }
 
 /// Formats an OTLP integer-valued attribute (int64 is JSON-encoded as a string).
 fn attr_int(key: &str, value: u64) -> String {
-    format!(
-        "{{\"key\":\"{}\",\"value\":{{\"intValue\":\"{}\"}}}}",
-        escape(key),
-        value
-    )
+    format!("{{\"key\":\"{}\",\"value\":{{\"intValue\":\"{}\"}}}}", escape(key), value)
 }
 
 /// POSTs `body` as `application/json` to a plain-HTTP OTLP endpoint.
@@ -207,10 +196,7 @@ fn parse_http_url(url: &str) -> Option<(String, u16, String)> {
         None => (rest, "/"),
     };
     let (host, port) = match authority.rfind(':') {
-        Some(index) => (
-            authority[..index].to_string(),
-            authority[index + 1..].parse().ok()?,
-        ),
+        Some(index) => (authority[..index].to_string(), authority[index + 1..].parse().ok()?),
         None => (authority.to_string(), 80),
     };
     if host.is_empty() {
@@ -249,27 +235,18 @@ fn append(path: &Path, line: &str) -> io::Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)?
-        .write_all(line.as_bytes())
+    OpenOptions::new().create(true).append(true).open(path)?.write_all(line.as_bytes())
 }
 
 /// Returns the current Unix time in nanoseconds, or `0` if the clock predates
 /// the epoch.
 fn now_nanos() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0)
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0)
 }
 
 /// Returns the user's home directory, honoring `USERPROFILE` then `HOME`.
 fn home_dir() -> Option<PathBuf> {
-    env::var_os("USERPROFILE")
-        .or_else(|| env::var_os("HOME"))
-        .map(PathBuf::from)
+    env::var_os("USERPROFILE").or_else(|| env::var_os("HOME")).map(PathBuf::from)
 }
 
 /// Escapes a string for embedding inside a JSON string literal.
@@ -299,10 +276,7 @@ mod tests {
             parse_http_url("http://localhost:4318/v1/traces"),
             Some(("localhost".to_string(), 4318, "/v1/traces".to_string()))
         );
-        assert_eq!(
-            parse_http_url("http://collector"),
-            Some(("collector".to_string(), 80, "/".to_string()))
-        );
+        assert_eq!(parse_http_url("http://collector"), Some(("collector".to_string(), 80, "/".to_string())));
     }
 
     #[test]

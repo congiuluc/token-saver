@@ -58,11 +58,8 @@ pub fn run(args: &[String]) -> ExitCode {
     let after_lines = line_count(&optimized);
 
     // Decide whether and where to write. Preview never writes.
-    let write_target: Option<String> = if opts.preview {
-        None
-    } else {
-        opts.out_path.clone().or_else(|| opts.file_path.clone())
-    };
+    let write_target: Option<String> =
+        if opts.preview { None } else { opts.out_path.clone().or_else(|| opts.file_path.clone()) };
 
     let mut written: Option<String> = None;
     if let Some(target) = &write_target {
@@ -73,13 +70,7 @@ pub fn run(args: &[String]) -> ExitCode {
             return ExitCode::FAILURE;
         } else {
             written = Some(target.clone());
-            metrics::record(
-                "optimize",
-                &opts.source,
-                &opts.text,
-                &optimized,
-                started.elapsed(),
-            );
+            metrics::record("optimize", &opts.source, &opts.text, &optimized, started.elapsed());
         }
     }
 
@@ -248,14 +239,7 @@ fn parse_args(args: &[String]) -> Result<Options, String> {
         return Err("optimize requires a source: --file, --stdin, or --prompt".to_string());
     };
 
-    Ok(Options {
-        text,
-        source,
-        file_path,
-        out_path,
-        preview,
-        json,
-    })
+    Ok(Options { text, source, file_path, out_path, preview, json })
 }
 
 /// Deterministically compacts `input` while preserving its meaning:

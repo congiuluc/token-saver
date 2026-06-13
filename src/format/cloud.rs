@@ -148,11 +148,7 @@ Provisioning Azure resources (azd provision)
 
 SUCCESS: Your application was provisioned in Azure in 1 minute.
 ";
-        let out = Outcome {
-            stdout: stdout.to_string(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: stdout.to_string(), stderr: String::new(), code: 0 };
         let summary = azd(&out);
         assert!(summary.contains("(✓) Done: Resource group: rg-foo"));
         assert!(summary.contains("SUCCESS: Your application was provisioned"));
@@ -161,11 +157,7 @@ SUCCESS: Your application was provisioned in Azure in 1 minute.
 
     #[test]
     fn gh_reports_ok_when_empty() {
-        let out = Outcome {
-            stdout: String::new(),
-            stderr: String::new(),
-            code: 0,
-        };
+        let out = Outcome { stdout: String::new(), stderr: String::new(), code: 0 };
         assert_eq!(gh(&out), "✓ gh: ok");
     }
 }

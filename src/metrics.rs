@@ -74,8 +74,7 @@ pub fn record(mode: &str, command: &str, raw: &str, out: &str, duration: Duratio
     let out_tokens_heuristic = out_estimate.heuristic;
     let raw_tokens_model = raw_estimate.model.unwrap_or(0);
     let out_tokens_model = out_estimate.model.unwrap_or(0);
-    let model_tokens_present =
-        u64::from(raw_estimate.model.is_some() && out_estimate.model.is_some());
+    let model_tokens_present = u64::from(raw_estimate.model.is_some() && out_estimate.model.is_some());
 
     if let Some(path) = log_path() {
         let line = format!(
@@ -99,15 +98,7 @@ pub fn record(mode: &str, command: &str, raw: &str, out: &str, duration: Duratio
         let _ = append(&path, &line);
     }
 
-    crate::otel::export(&crate::otel::Span {
-        mode,
-        command,
-        raw_tokens,
-        out_tokens,
-        raw_bytes,
-        out_bytes,
-        duration,
-    });
+    crate::otel::export(&crate::otel::Span { mode, command, raw_tokens, out_tokens, raw_bytes, out_bytes, duration });
 }
 
 /// Reads the metrics log and returns the aggregated token totals. Returns empty
@@ -138,16 +129,12 @@ pub fn reset_log() -> std::io::Result<ResetOutcome> {
                 fs::create_dir_all(parent)?;
             }
             // Fall back to truncation if removal fails for an existing file.
-            OpenOptions::new()
-                .write(true)
-                .truncate(true)
-                .open(&path)
-                .map_err(|truncate_err| {
-                    Error::new(
-                        truncate_err.kind(),
-                        format!("remove failed: {err}; truncate fallback failed: {truncate_err}"),
-                    )
-                })?;
+            OpenOptions::new().write(true).truncate(true).open(&path).map_err(|truncate_err| {
+                Error::new(
+                    truncate_err.kind(),
+                    format!("remove failed: {err}; truncate fallback failed: {truncate_err}"),
+                )
+            })?;
             Ok(ResetOutcome::Cleared(path))
         }
     }
@@ -161,25 +148,16 @@ fn sum_totals(contents: &str) -> Totals {
         if line.trim().is_empty() {
             continue;
         }
-        if let (Some(raw), Some(out)) = (
-            extract_u64(line, "rawTokens"),
-            extract_u64(line, "outTokens"),
-        ) {
+        if let (Some(raw), Some(out)) = (extract_u64(line, "rawTokens"), extract_u64(line, "outTokens")) {
             // Prefer explicit char counts when present; fall back to byte counts
             // for compatibility with older log entries.
-            let raw_chars = extract_u64(line, "rawChars")
-                .or_else(|| extract_u64(line, "rawBytes"))
-                .unwrap_or(0);
-            let out_chars = extract_u64(line, "outChars")
-                .or_else(|| extract_u64(line, "outBytes"))
-                .unwrap_or(0);
+            let raw_chars = extract_u64(line, "rawChars").or_else(|| extract_u64(line, "rawBytes")).unwrap_or(0);
+            let out_chars = extract_u64(line, "outChars").or_else(|| extract_u64(line, "outBytes")).unwrap_or(0);
 
             let raw_tokens_heuristic = extract_u64(line, "rawTokensHeuristic").unwrap_or(raw);
             let out_tokens_heuristic = extract_u64(line, "outTokensHeuristic").unwrap_or(out);
 
-            let model_tokens_present = extract_u64(line, "modelTokensPresent")
-                .map(|v| v == 1)
-                .unwrap_or(false);
+            let model_tokens_present = extract_u64(line, "modelTokensPresent").map(|v| v == 1).unwrap_or(false);
             let raw_tokens_model = extract_u64(line, "rawTokensModel").unwrap_or(0);
             let out_tokens_model = extract_u64(line, "outTokensModel").unwrap_or(0);
 
@@ -229,27 +207,18 @@ fn append(path: &Path, line: &str) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent)?;
     }
-    OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(path)?
-        .write_all(line.as_bytes())
+    OpenOptions::new().create(true).append(true).open(path)?.write_all(line.as_bytes())
 }
 
 /// Returns the current Unix time in milliseconds, or `0` if the clock is before
 /// the epoch.
 fn now_ms() -> u128 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_millis())
-        .unwrap_or(0)
+    SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_millis()).unwrap_or(0)
 }
 
 /// Returns the user's home directory, honoring `USERPROFILE` then `HOME`.
 fn home_dir() -> Option<PathBuf> {
-    env::var_os("USERPROFILE")
-        .or_else(|| env::var_os("HOME"))
-        .map(PathBuf::from)
+    env::var_os("USERPROFILE").or_else(|| env::var_os("HOME")).map(PathBuf::from)
 }
 
 /// Escapes a string for embedding inside a JSON string literal.
@@ -281,10 +250,7 @@ mod tests {
     }
 
     fn unique_temp_path(name: &str) -> PathBuf {
-        let nonce = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .map(|d| d.as_nanos())
-            .unwrap_or(0);
+        let nonce = SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
         env::temp_dir().join(format!("tokensaver-{name}-{nonce}.jsonl"))
     }
 
