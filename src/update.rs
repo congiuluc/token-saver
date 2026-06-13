@@ -50,6 +50,11 @@ pub fn run(args: &[String]) -> ExitCode {
         }
     };
 
+    if !is_valid_tag(&latest) {
+        eprintln!("token-saver: refusing to use an unexpected release tag '{latest}'");
+        return ExitCode::from(1);
+    }
+
     let latest_clean = latest.trim_start_matches(['v', 'V']);
     let up_to_date = !is_newer(&latest, CURRENT_VERSION);
 
@@ -99,17 +104,24 @@ fn perform_update(tag: &str) -> io::Result<PathBuf> {
     println!("token-saver: downloading {asset}...");
     download(&format!("{base}/{asset}"), &archive_path)?;
 
-    // Best-effort checksum verification: only fails on a genuine mismatch, not
-    // when the checksum file or hashing tool is unavailable.
+    // Verify the download against the published SHA-256. Verification is only
+    // skipped when the checksum asset is genuinely unavailable or no hashing
+    // tool exists on the system; a present checksum that mismatches is fatal.
     let sha_path = work_dir.join(format!("{asset}.sha256"));
     if download(&format!("{base}/{asset}.sha256"), &sha_path).is_ok() {
         match verify_checksum(&archive_path, &sha_path) {
-            Ok(true) => println!("token-saver: checksum verified."),
-            Ok(false) => {
+            Ok(ChecksumResult::Match) => println!("token-saver: checksum verified."),
+            Ok(ChecksumResult::Mismatch) => {
                 let _ = fs::remove_dir_all(&work_dir);
                 return Err(make_err("checksum verification failed; aborting"));
             }
-            Err(_) => eprintln!("token-saver: warning: could not verify checksum, continuing."),
+            Ok(ChecksumResult::NoTool) => {
+                eprintln!("token-saver: warning: no SHA-256 tool available; continuing without verification.");
+            }
+            Err(err) => {
+                let _ = fs::remove_dir_all(&work_dir);
+                return Err(make_err(&format!("could not verify checksum: {err}")));
+            }
         }
     } else {
         eprintln!("token-saver: warning: checksum file unavailable, continuing.");
@@ -194,6 +206,14 @@ fn is_newer(latest: &str, current: &str) -> bool {
         (Some(l), Some(c)) => l > c,
         _ => false,
     }
+}
+
+/// Returns `true` when a release tag is safe to interpolate into download URLs
+/// and shell-tool arguments (no quoting or shell metacharacters).
+fn is_valid_tag(tag: &str) -> bool {
+    !tag.is_empty()
+        && tag.len() <= 64
+        && tag.chars().all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '+' | '-'))
 }
 
 /// Returns the Rust target triple of the running platform, or `None` if no
@@ -295,14 +315,27 @@ fn extract(archive: &Path, dest_dir: &Path) -> io::Result<()> {
     }
 }
 
+/// The outcome of a checksum verification attempt.
+enum ChecksumResult {
+    /// The archive hash matched the published checksum.
+    Match,
+    /// The archive hash did not match the published checksum.
+    Mismatch,
+    /// No SHA-256 tool was available, so verification could not be performed.
+    NoTool,
+}
+
 /// Verifies that `archive` matches the hash stored in `sha_file`.
-fn verify_checksum(archive: &Path, sha_file: &Path) -> io::Result<bool> {
+fn verify_checksum(archive: &Path, sha_file: &Path) -> io::Result<ChecksumResult> {
     let expected = fs::read_to_string(sha_file)?.split_whitespace().next().unwrap_or("").to_lowercase();
     if expected.is_empty() {
         return Err(make_err("checksum file was empty"));
     }
-    let actual = compute_sha256(archive).ok_or_else(|| make_err("no SHA-256 tool available"))?;
-    Ok(actual.eq_ignore_ascii_case(&expected))
+    match compute_sha256(archive) {
+        Some(actual) if actual.eq_ignore_ascii_case(&expected) => Ok(ChecksumResult::Match),
+        Some(_) => Ok(ChecksumResult::Mismatch),
+        None => Ok(ChecksumResult::NoTool),
+    }
 }
 
 /// Computes the SHA-256 of `path` using the first available system tool.
@@ -390,11 +423,18 @@ fn capture(program: &str, args: &[&str]) -> Option<String> {
     }
 }
 
-/// Creates a fresh, process-unique temporary directory.
+/// Creates a fresh, process-unique temporary directory. The directory must not
+/// already exist (defeating symlink/pre-creation attacks in a shared temp), and
+/// is restricted to the current user on Unix.
 fn unique_temp_dir() -> io::Result<PathBuf> {
     let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
     let dir = env::temp_dir().join(format!("token-saver-update-{}-{}", std::process::id(), nanos));
-    fs::create_dir_all(&dir)?;
+    fs::create_dir(&dir)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        fs::set_permissions(&dir, fs::Permissions::from_mode(0o700))?;
+    }
     Ok(dir)
 }
 
@@ -457,6 +497,15 @@ mod tests {
         assert!(!is_newer("0.1.0", "0.1.0"));
         assert!(!is_newer("0.1.0", "0.2.0"));
         assert!(!is_newer("v1.0.0", "1.0.0"));
+    }
+
+    #[test]
+    fn validates_release_tags() {
+        assert!(is_valid_tag("v0.1.0"));
+        assert!(is_valid_tag("1.2.3-rc.1"));
+        assert!(!is_valid_tag(""));
+        assert!(!is_valid_tag("v1.0.0'; rm -rf /"));
+        assert!(!is_valid_tag("v1.0.0 && evil"));
     }
 
     #[test]

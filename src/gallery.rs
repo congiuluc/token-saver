@@ -23,7 +23,9 @@ use std::io::{self, BufRead, BufReader, Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::path::{Component, Path, PathBuf};
 use std::process::{Command, ExitCode};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use crate::assess::{self, Category};
 
@@ -36,6 +38,12 @@ const MAX_DEPTH: usize = 12;
 
 /// Maximum number of bytes shown in a content preview.
 const PREVIEW_BYTES: usize = 4_000;
+
+/// Maximum number of concurrent connections the gallery server will service.
+const MAX_CONNECTIONS: usize = 64;
+
+/// Maximum request body size (bytes) the gallery server will read.
+const MAX_BODY_BYTES: usize = 1_000_000;
 
 /// Whether a gallery item is a single file or a directory tree (a skill).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -308,13 +316,16 @@ fn cmd_harvest(args: &[String]) -> ExitCode {
 }
 
 /// Moves a single candidate into the gallery and writes its `meta` file.
+///
+/// The `meta` file is written before the payload is moved so a mid-operation
+/// failure cannot strand a payload without metadata. If the move fails, the
+/// freshly created item directory is removed and the source is left intact.
 fn harvest_one(root: &Path, cand: &Candidate, id: &str) -> io::Result<()> {
     let item_dir = root.join("items").join(id);
     fs::create_dir_all(&item_dir)?;
 
     let entry = file_name_string(&cand.path);
     let dest = item_dir.join(&entry);
-    move_path(&cand.path, &dest)?;
 
     let item = Item {
         id: id.to_string(),
@@ -322,11 +333,16 @@ fn harvest_one(root: &Path, cand: &Candidate, id: &str) -> io::Result<()> {
         name: cand.name.clone(),
         kind: cand.kind,
         entry,
-        description: read_description(&dest, cand.category),
+        description: read_description(&cand.path, cand.category),
         source: cand.path.to_string_lossy().to_string(),
         harvested_at: now_secs(),
     };
     fs::write(item_dir.join("meta"), meta_text(&item))?;
+
+    if let Err(err) = move_path(&cand.path, &dest) {
+        let _ = fs::remove_dir_all(&item_dir);
+        return Err(err);
+    }
     Ok(())
 }
 
@@ -578,6 +594,9 @@ fn install_item(root: &Path, id: &str, workspace: &Path, force: bool) -> Result<
     let Some(item) = load_item(root, id) else {
         return Err(format!("no gallery item with id '{id}'"));
     };
+    if !is_safe_entry(&item.entry) {
+        return Err(format!("gallery item '{id}' has an unsafe entry name"));
+    }
     if !workspace.is_dir() {
         return Err(format!("target is not a directory: {}", display_path(workspace)));
     }
@@ -739,14 +758,25 @@ fn cmd_serve(args: &[String]) -> ExitCode {
         open_browser(&url);
     }
 
+    let active = Arc::new(AtomicUsize::new(0));
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
+                let _ = stream.set_read_timeout(Some(Duration::from_secs(15)));
+                let _ = stream.set_write_timeout(Some(Duration::from_secs(15)));
+                if active.load(Ordering::SeqCst) >= MAX_CONNECTIONS {
+                    // Too many in-flight connections; drop this one rather than
+                    // letting a flood exhaust threads.
+                    continue;
+                }
                 let root = root.clone();
+                let active = Arc::clone(&active);
+                active.fetch_add(1, Ordering::SeqCst);
                 std::thread::spawn(move || {
-                    if let Err(err) = handle_connection(stream, &root) {
+                    if let Err(err) = handle_connection(stream, &root, port) {
                         eprintln!("token-saver: connection error: {err}");
                     }
+                    active.fetch_sub(1, Ordering::SeqCst);
                 });
             }
             Err(err) => eprintln!("token-saver: accept error: {err}"),
@@ -756,7 +786,7 @@ fn cmd_serve(args: &[String]) -> ExitCode {
 }
 
 /// Handles a single HTTP connection.
-fn handle_connection(stream: TcpStream, root: &Path) -> io::Result<()> {
+fn handle_connection(stream: TcpStream, root: &Path, port: u16) -> io::Result<()> {
     let mut reader = BufReader::new(stream);
     let mut request_line = String::new();
     if reader.read_line(&mut request_line)? == 0 {
@@ -768,6 +798,8 @@ fn handle_connection(stream: TcpStream, root: &Path) -> io::Result<()> {
     let target = parts.next().unwrap_or("/").to_string();
 
     let mut content_length = 0usize;
+    let mut host: Option<String> = None;
+    let mut origin: Option<String> = None;
     loop {
         let mut line = String::new();
         if reader.read_line(&mut line)? == 0 {
@@ -777,15 +809,30 @@ fn handle_connection(stream: TcpStream, root: &Path) -> io::Result<()> {
         if trimmed.is_empty() {
             break;
         }
-        if let Some(value) = trimmed.strip_prefix("Content-Length:").or_else(|| trimmed.strip_prefix("content-length:"))
-        {
+        if let Some(value) = header_value(trimmed, "content-length") {
             content_length = value.trim().parse().unwrap_or(0);
+        } else if let Some(value) = header_value(trimmed, "host") {
+            host = Some(value.trim().to_string());
+        } else if let Some(value) = header_value(trimmed, "origin") {
+            origin = Some(value.trim().to_string());
         }
+    }
+
+    // Reject cross-site and DNS-rebinding requests: the gallery server exposes a
+    // local file-write endpoint, so only genuine loopback requests are allowed.
+    if !request_is_local(host.as_deref(), origin.as_deref(), port) {
+        let stream = reader.into_inner();
+        return respond(stream, 403, "text/plain; charset=utf-8", b"Forbidden");
+    }
+
+    if content_length > MAX_BODY_BYTES {
+        let stream = reader.into_inner();
+        return respond(stream, 413, "text/plain; charset=utf-8", b"Payload too large");
     }
 
     let mut body = Vec::new();
     if content_length > 0 {
-        body.resize(content_length.min(1_000_000), 0);
+        body.resize(content_length, 0);
         reader.read_exact(&mut body)?;
     }
     let body = String::from_utf8_lossy(&body).to_string();
@@ -820,7 +867,9 @@ fn respond(mut stream: TcpStream, status: u16, content_type: &str, body: &[u8]) 
     let reason = match status {
         200 => "OK",
         400 => "Bad Request",
+        403 => "Forbidden",
         404 => "Not Found",
+        413 => "Payload Too Large",
         500 => "Internal Server Error",
         _ => "OK",
     };
@@ -831,6 +880,57 @@ fn respond(mut stream: TcpStream, status: u16, content_type: &str, body: &[u8]) 
     stream.write_all(header.as_bytes())?;
     stream.write_all(body)?;
     stream.flush()
+}
+
+/// Returns the value of header `name` (case-insensitive) from a header line.
+fn header_value<'a>(line: &'a str, name: &str) -> Option<&'a str> {
+    let (key, value) = line.split_once(':')?;
+    key.trim().eq_ignore_ascii_case(name).then_some(value)
+}
+
+/// Rejects requests that aren't from a loopback browser context, defeating
+/// DNS-rebinding and cross-site (CSRF) access to the local gallery server.
+///
+/// A `Host` header naming the loopback interface (and our port) is required.
+/// If an `Origin` is present (cross-site fetches always send one), it must also
+/// be our own loopback origin.
+fn request_is_local(host: Option<&str>, origin: Option<&str>, port: u16) -> bool {
+    let Some(host) = host else {
+        return false;
+    };
+    if !host_is_loopback(host, port) {
+        return false;
+    }
+    match origin {
+        Some(origin) => origin
+            .strip_prefix("http://")
+            .or_else(|| origin.strip_prefix("https://"))
+            .is_some_and(|rest| host_is_loopback(rest, port)),
+        None => true,
+    }
+}
+
+/// Returns whether `authority` (`host[:port]`) names the loopback interface on
+/// our serving `port`.
+fn host_is_loopback(authority: &str, port: u16) -> bool {
+    let (hostname, host_port) = split_authority(authority);
+    matches!(hostname, "127.0.0.1" | "localhost" | "::1") && host_port == Some(port)
+}
+
+/// Splits an HTTP authority into `(hostname, port)`, handling IPv6 literals.
+fn split_authority(authority: &str) -> (&str, Option<u16>) {
+    if let Some(rest) = authority.strip_prefix('[') {
+        // IPv6 literal: `[host]:port`.
+        if let Some((host, after)) = rest.split_once(']') {
+            let port = after.strip_prefix(':').and_then(|p| p.parse().ok());
+            return (host, port);
+        }
+        return (authority, None);
+    }
+    match authority.rsplit_once(':') {
+        Some((host, port)) => (host, port.parse().ok()),
+        None => (authority, None),
+    }
 }
 
 /// Handles `POST /api/install`.
@@ -1187,6 +1287,18 @@ fn is_safe_id(id: &str) -> bool {
         && id != ".."
 }
 
+/// Validates that an item `entry` is a single, non-traversing path component.
+///
+/// Unlike [`is_safe_id`], entries are real file/directory names and may contain
+/// spaces or Unicode, so only path separators and traversal are rejected.
+fn is_safe_entry(entry: &str) -> bool {
+    if entry.is_empty() || entry.len() > 255 {
+        return false;
+    }
+    let mut components = Path::new(entry).components();
+    matches!(components.next(), Some(Component::Normal(_))) && components.next().is_none()
+}
+
 /// Collapses a value to a single line for storage in `meta` and JSON.
 fn sanitize_line(value: &str) -> String {
     value.replace(['\n', '\r', '\t'], " ").trim().to_string()
@@ -1284,7 +1396,6 @@ fn vscode_prompt_dirs(home: &Path) -> Vec<PathBuf> {
     }
 
     let _ = home;
-    let _ = names;
     dirs
 }
 
@@ -1293,7 +1404,7 @@ fn now_secs() -> u64 {
     SystemTime::now().duration_since(UNIX_EPOCH).map(|d| d.as_secs()).unwrap_or(0)
 }
 
-/// Renders a path for display, preferring a relative form where short.
+/// Renders a path for display.
 fn display_path(path: &Path) -> String {
     path.to_string_lossy().to_string()
 }
@@ -1315,6 +1426,32 @@ mod tests {
         let used = vec!["skills-foo".to_string(), "skills-foo-2".to_string()];
         assert_eq!(unique_id(Category::Skills, "foo", &used), "skills-foo-3");
         assert_eq!(unique_id(Category::Prompts, "bar", &used), "prompts-bar");
+    }
+
+    #[test]
+    fn is_safe_entry_rejects_traversal() {
+        assert!(is_safe_entry("copilot-instructions.md"));
+        assert!(is_safe_entry("My Prompt.prompt.md"));
+        assert!(!is_safe_entry("../evil.md"));
+        assert!(!is_safe_entry("a/b.md"));
+        assert!(!is_safe_entry(""));
+    }
+
+    #[test]
+    fn request_is_local_blocks_cross_site() {
+        // Loopback Host with no Origin is allowed.
+        assert!(request_is_local(Some("127.0.0.1:7878"), None, 7878));
+        assert!(request_is_local(Some("localhost:7878"), None, 7878));
+        // Matching loopback Origin is allowed.
+        assert!(request_is_local(Some("127.0.0.1:7878"), Some("http://127.0.0.1:7878"), 7878));
+        // Missing Host is rejected.
+        assert!(!request_is_local(None, None, 7878));
+        // Wrong port is rejected.
+        assert!(!request_is_local(Some("127.0.0.1:9999"), None, 7878));
+        // Cross-site Origin (CSRF) is rejected.
+        assert!(!request_is_local(Some("127.0.0.1:7878"), Some("http://evil.example"), 7878));
+        // Non-loopback Host (DNS rebinding) is rejected.
+        assert!(!request_is_local(Some("evil.example:7878"), None, 7878));
     }
 
     #[test]
