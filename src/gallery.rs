@@ -30,8 +30,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use crate::assess::{self, Category};
 
 /// Folders that should never be harvested even when found under a user root.
-const HARVEST_PRUNE: &[&str] =
-    &[".git", "node_modules", "target", "dist", "build", "out", "installed-plugins", "token-saver-gallery"];
+const HARVEST_PRUNE: &[&str] = &[".git", "node_modules", "target", "dist", "build", "out", "token-saver-gallery"];
 
 /// Maximum recursion depth when scanning user roots for harvest candidates.
 const MAX_DEPTH: usize = 12;
@@ -990,139 +989,852 @@ fn item_detail_json(root: &Path, id: &str) -> Option<String> {
 /// Returns the static HTML for the browser gallery (CSS + JS inlined, no deps).
 fn index_html() -> String {
     // Dynamic content is rendered with textContent in JS to avoid XSS.
-    r####"<!DOCTYPE html>
+        r####"<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>token-saver gallery</title>
 <style>
-  :root { color-scheme: light dark; }
-  body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; margin: 0; }
-  header { padding: 1rem 1.5rem; border-bottom: 1px solid #8884; }
-  header h1 { margin: 0; font-size: 1.2rem; }
-  header p { margin: .25rem 0 0; opacity: .7; font-size: .85rem; }
-  main { display: grid; grid-template-columns: 320px 1fr; min-height: calc(100vh - 70px); }
-  #list { border-right: 1px solid #8884; overflow: auto; }
-  .group { padding: .5rem 1rem; font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; opacity: .6; }
-  .item { padding: .6rem 1rem; cursor: pointer; border-bottom: 1px solid #8882; }
-  .item:hover { background: #8881; }
-  .item.active { background: #4a90d922; }
-  .item .name { font-weight: 600; }
-  .item .desc { font-size: .8rem; opacity: .7; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  #detail { padding: 1.5rem; overflow: auto; }
-  #detail h2 { margin-top: 0; }
-  pre { background: #8881; padding: 1rem; border-radius: 6px; overflow: auto; white-space: pre-wrap; }
-  .row { display: flex; gap: .5rem; align-items: center; margin: .75rem 0; flex-wrap: wrap; }
-  input { padding: .4rem .5rem; border: 1px solid #8886; border-radius: 6px; min-width: 320px; }
-  button { padding: .45rem .9rem; border: 0; border-radius: 6px; background: #4a90d9; color: #fff; cursor: pointer; }
-  button:hover { background: #3b78ba; }
-  .status { margin-left: .5rem; font-size: .85rem; }
-  .empty { padding: 2rem; opacity: .6; }
-  code { background: #8882; padding: .1rem .3rem; border-radius: 4px; }
+    :root {
+        --bg: #0d1117;
+        --bg-elev: #161b22;
+        --surface: #0f1724;
+        --text: #e6edf3;
+        --muted: #8b949e;
+        --line: #30363d;
+        --blue: #58a6ff;
+        --cobalt: #1f6feb;
+        --purple: #a371f7;
+        --pink: #db61a2;
+        --rose: #f778ba;
+        --radius: 14px;
+        --shadow: 0 16px 50px rgba(0, 0, 0, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { height: 100%; }
+
+    body {
+        margin: 0;
+        color: var(--text);
+        background:
+            radial-gradient(1200px 500px at -5% -10%, rgba(88, 166, 255, 0.24), transparent 55%),
+            radial-gradient(900px 420px at 105% -12%, rgba(163, 113, 247, 0.22), transparent 52%),
+            linear-gradient(180deg, #090c12 0%, var(--bg) 55%, #0b111b 100%);
+        font-family: "Segoe UI", "Inter", "Avenir Next", "SF Pro Text", system-ui, -apple-system, sans-serif;
+        line-height: 1.5;
+    }
+
+    a { color: var(--blue); }
+
+    .skip {
+        position: absolute;
+        left: -9999px;
+        top: 0;
+        background: #fff;
+        color: #111;
+        padding: .5rem .75rem;
+        border-radius: 8px;
+    }
+    .skip:focus { left: 10px; top: 10px; z-index: 1000; }
+
+    .wrap {
+        min-height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr;
+    }
+
+    .hero {
+        padding: 1.25rem 1.1rem .95rem;
+        border-bottom: 1px solid #ffffff1f;
+        backdrop-filter: blur(6px);
+        background: linear-gradient(90deg, rgba(13, 17, 23, 0.84), rgba(13, 17, 23, 0.62));
+    }
+
+    .hero-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        display: grid;
+        grid-template-columns: auto 1fr;
+        align-items: center;
+        gap: .9rem 1.1rem;
+    }
+
+    .logo {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        background: conic-gradient(from 130deg, var(--blue), var(--purple), var(--pink), var(--rose), var(--cobalt), var(--blue));
+        box-shadow: 0 0 0 2px #ffffff12 inset, 0 12px 28px rgba(24, 88, 179, 0.36);
+        display: grid;
+        place-items: center;
+        font-weight: 800;
+        font-size: 1.1rem;
+        letter-spacing: .03em;
+        color: #ffffff;
+        text-shadow: 0 1px 6px rgba(0, 0, 0, .45);
+    }
+
+    h1 {
+        margin: 0;
+        font-size: clamp(1.25rem, 2.3vw, 1.6rem);
+        line-height: 1.2;
+    }
+
+    .subtitle {
+        margin: .28rem 0 0;
+        color: var(--muted);
+        font-size: .95rem;
+    }
+
+    .hero-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        flex-wrap: wrap;
+        gap: .6rem;
+        align-items: center;
+    }
+
+    .btn {
+        border: 1px solid transparent;
+        border-radius: 11px;
+        padding: .53rem .82rem;
+        font-size: .88rem;
+        font-weight: 650;
+        text-decoration: none;
+        cursor: pointer;
+        transition: transform .14s ease, border-color .14s ease, background-color .14s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: .35rem;
+    }
+
+    .btn:focus-visible,
+    .item:focus-visible,
+    .field:focus-visible,
+    .select:focus-visible {
+        outline: 3px solid rgba(88, 166, 255, 0.45);
+        outline-offset: 2px;
+    }
+
+    .btn-primary {
+        color: #091321;
+        background: linear-gradient(130deg, var(--blue), #86c2ff);
+    }
+    .btn-primary:hover { transform: translateY(-1px); }
+
+    .btn-ghost {
+        color: var(--text);
+        background: #ffffff0a;
+        border-color: #ffffff2a;
+    }
+    .btn-ghost:hover {
+        background: #ffffff12;
+        border-color: #ffffff44;
+        transform: translateY(-1px);
+    }
+
+    .btn-insiders {
+        color: #150a27;
+        background: linear-gradient(130deg, var(--purple), var(--pink));
+    }
+
+    .split {
+        position: relative;
+        display: inline-flex;
+    }
+
+    .split-main {
+        border-radius: 11px 0 0 11px;
+    }
+
+    .split-toggle {
+        border-left: 1px solid #ffffff3d;
+        border-radius: 0 11px 11px 0;
+        min-width: 2.15rem;
+        padding: .53rem .55rem;
+    }
+
+    .split-menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + .4rem);
+        min-width: 185px;
+        border-radius: 10px;
+        border: 1px solid #ffffff24;
+        background: #0f1724;
+        box-shadow: 0 14px 26px #0008;
+        overflow: hidden;
+        z-index: 30;
+    }
+
+    .split-menu[hidden] { display: none; }
+
+    .menu-item {
+        width: 100%;
+        border: 0;
+        border-radius: 0;
+        text-align: left;
+        padding: .6rem .7rem;
+        color: #dbe7f3;
+        background: transparent;
+        font-size: .88rem;
+    }
+
+    .menu-item:hover {
+        background: #ffffff14;
+    }
+
+    .layout {
+        max-width: 1280px;
+        width: 100%;
+        margin: 0 auto;
+        padding: .95rem 1.1rem 1.15rem;
+        display: grid;
+        grid-template-columns: minmax(300px, 370px) minmax(0, 1fr);
+        gap: .95rem;
+        align-items: stretch;
+    }
+
+    .panel {
+        background: linear-gradient(180deg, rgba(22, 27, 34, 0.96), rgba(15, 23, 36, 0.96));
+        border: 1px solid #ffffff1f;
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+        min-height: 0;
+    }
+
+    .list-panel {
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        overflow: hidden;
+    }
+
+    .panel-head {
+        padding: .9rem .9rem .55rem;
+        border-bottom: 1px solid #ffffff14;
+    }
+
+    .panel-title {
+        margin: 0;
+        font-size: 1rem;
+        letter-spacing: .02em;
+    }
+
+    .toolbar {
+        padding: .6rem .9rem .75rem;
+        border-bottom: 1px solid #ffffff12;
+        display: grid;
+        gap: .5rem;
+    }
+
+    .field,
+    .select {
+        width: 100%;
+        border-radius: 10px;
+        border: 1px solid #ffffff2b;
+        background: #0c1320;
+        color: var(--text);
+        padding: .52rem .66rem;
+        font: inherit;
+    }
+
+    .hint {
+        margin: .2rem 0 0;
+        font-size: .79rem;
+        color: var(--muted);
+    }
+
+    .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        border: 0;
+        white-space: nowrap;
+    }
+
+    .toolbar-actions {
+        display: flex;
+        gap: .45rem;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .btn-subtle {
+        border: 1px solid #ffffff2b;
+        background: #ffffff08;
+        color: #d8e3ef;
+        border-radius: 10px;
+        padding: .42rem .62rem;
+        font-size: .8rem;
+    }
+
+    .btn-subtle:hover {
+        background: #ffffff12;
+        border-color: #ffffff45;
+    }
+
+    .list {
+        overflow: auto;
+        padding: .45rem;
+    }
+
+    .group {
+        margin: .25rem .24rem .2rem;
+        color: #b8c5d2;
+        font-size: .72rem;
+        letter-spacing: .09em;
+        text-transform: uppercase;
+    }
+
+    .item {
+        width: 100%;
+        text-align: left;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--text);
+        border-radius: 11px;
+        padding: .58rem .62rem;
+        margin-bottom: .35rem;
+        cursor: pointer;
+    }
+
+    .item:hover {
+        border-color: #ffffff2a;
+        background: #ffffff08;
+    }
+
+    .item.active {
+        border-color: rgba(88, 166, 255, 0.62);
+        background: linear-gradient(120deg, rgba(88, 166, 255, 0.19), rgba(163, 113, 247, 0.16));
+    }
+
+    .item-name {
+        font-size: .93rem;
+        font-weight: 650;
+    }
+
+    .item-desc {
+        margin-top: .08rem;
+        font-size: .8rem;
+        color: #b1bdc9;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .empty {
+        margin: .5rem;
+        padding: 1rem;
+        border: 1px dashed #ffffff30;
+        border-radius: 12px;
+        color: #b5c0cb;
+        font-size: .9rem;
+    }
+
+    .detail {
+        display: grid;
+        grid-template-rows: auto auto 1fr;
+        min-height: 0;
+    }
+
+    .detail-head {
+        padding: 1rem 1rem .7rem;
+        border-bottom: 1px solid #ffffff14;
+    }
+
+    .detail-name {
+        margin: 0;
+        font-size: clamp(1.15rem, 2vw, 1.35rem);
+        line-height: 1.25;
+    }
+
+    .chips {
+        margin-top: .45rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: .45rem;
+        color: #bdd0e3;
+    }
+
+    .chip {
+        border: 1px solid #ffffff28;
+        border-radius: 999px;
+        font-size: .75rem;
+        padding: .2rem .55rem;
+        background: #ffffff08;
+    }
+
+    .install {
+        padding: .9rem 1rem;
+        border-bottom: 1px solid #ffffff14;
+        display: grid;
+        gap: .55rem;
+    }
+
+    .install-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: .5rem;
+        align-items: center;
+    }
+
+    .status {
+        min-height: 1.15rem;
+        color: #b5e3c8;
+        font-size: .84rem;
+    }
+
+    .status.error {
+        color: #ffb2b2;
+    }
+
+    pre {
+        margin: 0;
+        padding: 1rem;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+        background: linear-gradient(180deg, #0a111c, #09101a);
+        color: #dce5ee;
+        border-radius: 0 0 var(--radius) var(--radius);
+        font-family: "Cascadia Code", "Consolas", monospace;
+        font-size: .86rem;
+    }
+
+    @media (max-width: 930px) {
+        .layout {
+            grid-template-columns: 1fr;
+            padding-top: .75rem;
+        }
+        .list-panel { max-height: 45vh; }
+        .hero-inner { grid-template-columns: 1fr; }
+        .logo { width: 48px; height: 48px; }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .panel,
+        .hero {
+            animation: rise .45s ease both;
+        }
+
+        .list .item {
+            animation: fade .22s ease both;
+        }
+
+        @keyframes rise {
+            from { opacity: 0; transform: translateY(7px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fade {
+            from { opacity: .5; transform: translateY(2px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    }
 </style>
 </head>
 <body>
-<header>
-  <h1>token-saver gallery</h1>
-  <p>Your harvested Copilot agents, skills, prompts &amp; instructions. Served locally.</p>
-</header>
-<main>
-  <div id="list"><div class="empty">Loading…</div></div>
-  <div id="detail"><div class="empty">Select an item to view details.</div></div>
-</main>
+<a class="skip" href="#detail">Skip to item details</a>
+<div class="wrap">
+    <header class="hero">
+        <div class="hero-inner">
+            <div class="logo" aria-hidden="true">TS</div>
+            <div>
+                <h1>token-saver gallery</h1>
+                <p class="subtitle">Browse and install harvested Copilot prompts, agents, skills, instructions, and tools.</p>
+            </div>
+            <nav class="hero-actions" aria-label="Quick actions">
+                <a class="btn btn-ghost" href="https://awesome-copilot.github.com/" target="_blank" rel="noreferrer">Awesome GitHub Copilot</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="layout">
+        <section class="panel list-panel" aria-label="Gallery items">
+            <div class="panel-head"><h2 class="panel-title">Items</h2></div>
+            <div class="toolbar">
+                <label>
+                    <span class="hint">Search</span>
+                    <input id="search" class="field" type="search" placeholder="Find by name, id, or description" autocomplete="off">
+                </label>
+                <label>
+                    <span class="hint">Category</span>
+                    <select id="category" class="select">
+                        <option value="">All categories</option>
+                    </select>
+                </label>
+                <div class="toolbar-actions">
+                    <button id="clear-filters" class="btn-subtle" type="button">Clear filters</button>
+                    <span class="hint">Shortcut: /</span>
+                </div>
+                <p id="count" class="hint" role="status" aria-live="polite"></p>
+            </div>
+            <div id="list" class="list"><div class="empty">Loading...</div></div>
+        </section>
+
+        <section class="panel detail" id="detail" aria-label="Item details">
+            <div id="detail-head" class="detail-head">
+                <h2 class="detail-name">Select an item</h2>
+                <p class="hint">Choose an entry from the left to preview and install.</p>
+            </div>
+            <div id="install" class="install">
+                <label>
+                    <span class="hint">Workspace folder (absolute path)</span>
+                    <div class="install-grid">
+                        <input id="target-dir" class="field" placeholder="d:\\dev\\my-repo" aria-describedby="target-help">
+                        <div class="split">
+                            <button id="install-btn" class="btn btn-primary split-main" type="button" disabled>Install to VS Code</button>
+                            <button id="install-target-toggle" class="btn btn-primary split-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Choose install target" disabled>▾</button>
+                            <div id="install-target-menu" class="split-menu" hidden>
+                                <button id="install-target-vscode" class="menu-item" type="button">VS Code</button>
+                                <button id="install-target-insiders" class="menu-item" type="button">VS Code Insiders</button>
+                            </div>
+                        </div>
+                    </div>
+                </label>
+                <div id="target-help" class="hint">Path is remembered locally in your browser session.</div>
+                <div id="status" class="status" role="status" aria-live="polite"></div>
+            </div>
+            <pre id="preview">Select an item to view details.</pre>
+        </section>
+    </main>
+</div>
+
 <script>
 let items = [];
+let filtered = [];
 let activeId = null;
+let visibleIds = [];
+
+const listEl = document.getElementById('list');
+const countEl = document.getElementById('count');
+const searchEl = document.getElementById('search');
+const categoryEl = document.getElementById('category');
+const clearFiltersEl = document.getElementById('clear-filters');
+const detailHeadEl = document.getElementById('detail-head');
+const previewEl = document.getElementById('preview');
+const statusEl = document.getElementById('status');
+const installBtn = document.getElementById('install-btn');
+const installTargetToggleEl = document.getElementById('install-target-toggle');
+const installTargetMenuEl = document.getElementById('install-target-menu');
+const installTargetVsCodeEl = document.getElementById('install-target-vscode');
+const installTargetInsidersEl = document.getElementById('install-target-insiders');
+const targetDirEl = document.getElementById('target-dir');
+let installTarget = 'VS Code';
+const LAST_DIR_KEY = 'token-saver-gallery-target-dir';
+
+searchEl.addEventListener('input', applyFilters);
+categoryEl.addEventListener('change', applyFilters);
+clearFiltersEl.addEventListener('click', () => {
+    searchEl.value = '';
+    categoryEl.value = '';
+    applyFilters();
+    searchEl.focus();
+});
+installBtn.addEventListener('click', () => {
+    if (!activeId) {
+        setStatus('Select an item first.', false);
+        return;
+    }
+    install(activeId, targetDirEl.value, installTarget);
+});
+
+installTargetToggleEl.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    const next = installTargetMenuEl.hidden;
+    installTargetMenuEl.hidden = !next;
+    installTargetToggleEl.setAttribute('aria-expanded', String(next));
+});
+
+installTargetVsCodeEl.addEventListener('click', () => {
+    setInstallTarget('VS Code');
+    hideInstallMenu();
+});
+
+installTargetInsidersEl.addEventListener('click', () => {
+    setInstallTarget('VS Code Insiders');
+    hideInstallMenu();
+});
+
+document.addEventListener('click', () => hideInstallMenu());
+document.addEventListener('keydown', (ev) => {
+    if (ev.key === 'Escape') {
+        hideInstallMenu();
+    }
+    if ((ev.key === 'ArrowDown' || ev.key === 'ArrowUp') && !isTypingContext(document.activeElement) && !ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+        ev.preventDefault();
+        moveSelection(ev.key === 'ArrowDown' ? 1 : -1);
+    }
+    if (ev.key === 'Enter' && !isTypingContext(document.activeElement) && activeId && !ev.altKey && !ev.ctrlKey && !ev.metaKey) {
+        ev.preventDefault();
+        showDetail(activeId, { focusItem: true });
+    }
+    if (ev.key === '/' && document.activeElement !== searchEl && !isTypingContext(document.activeElement)) {
+        ev.preventDefault();
+        searchEl.focus();
+    }
+});
+
+targetDirEl.addEventListener('change', () => {
+    const value = targetDirEl.value.trim();
+    if (value) {
+        try { localStorage.setItem(LAST_DIR_KEY, value); } catch {}
+    }
+});
+
+function isTypingContext(el) {
+    if (!el) return false;
+    const tag = (el.tagName || '').toUpperCase();
+    return tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable;
+}
+
+function hideInstallMenu() {
+    installTargetMenuEl.hidden = true;
+    installTargetToggleEl.setAttribute('aria-expanded', 'false');
+}
+
+function setInstallTarget(target) {
+    installTarget = target;
+    installBtn.textContent = 'Install to ' + target;
+}
+
+function setStatus(text, ok) {
+    statusEl.textContent = text;
+    statusEl.classList.toggle('error', !ok && !!text);
+    statusEl.style.color = ok ? '#b5e3c8' : '#ffb2b2';
+}
+
+function resetDetail() {
+    detailHeadEl.innerHTML = '<h2 class="detail-name">Select an item</h2><p class="hint">Choose an entry from the left to preview and install.</p>';
+    previewEl.textContent = 'Select an item to view details.';
+    installBtn.disabled = true;
+    installTargetToggleEl.disabled = true;
+    hideInstallMenu();
+    setInstallTarget('VS Code');
+    setStatus('', true);
+}
 
 async function load() {
-  const res = await fetch('/api/items');
-  items = await res.json();
-  renderList();
+    try {
+        const remembered = localStorage.getItem(LAST_DIR_KEY);
+        if (remembered) targetDirEl.value = remembered;
+    } catch {}
+
+    try {
+        const res = await fetch('/api/items');
+        if (!res.ok) {
+            throw new Error('bad response');
+        }
+        items = await res.json();
+    } catch {
+        items = [];
+        const msg = document.createElement('div');
+        msg.className = 'empty';
+        msg.textContent = 'Could not load items. Refresh the page or restart `token-saver gallery serve`.';
+        listEl.textContent = '';
+        listEl.appendChild(msg);
+        countEl.textContent = 'load failed';
+        return;
+    }
+
+    const cats = Array.from(new Set(items.map(it => it.category))).sort();
+    for (const c of cats) {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        categoryEl.appendChild(opt);
+    }
+
+    applyFilters();
+    if (!items.length) resetDetail();
+}
+
+function applyFilters() {
+    const q = searchEl.value.trim().toLowerCase();
+    const cat = categoryEl.value;
+    filtered = items.filter(it => {
+        if (cat && it.category !== cat) return false;
+        if (!q) return true;
+        const hay = (it.name + ' ' + it.id + ' ' + (it.description || '')).toLowerCase();
+        return hay.includes(q);
+    });
+
+    if (activeId && !filtered.some(it => it.id === activeId)) {
+        activeId = null;
+        resetDetail();
+    }
+
+    renderList();
 }
 
 function renderList() {
-  const list = document.getElementById('list');
-  list.textContent = '';
-  if (items.length === 0) {
-    const e = document.createElement('div');
-    e.className = 'empty';
-    e.textContent = 'The gallery is empty. Run: token-saver gallery harvest --apply';
-    list.appendChild(e);
-    return;
-  }
-  const groups = {};
-  for (const it of items) (groups[it.category] ||= []).push(it);
-  for (const cat of Object.keys(groups).sort()) {
-    const g = document.createElement('div');
-    g.className = 'group';
-    g.textContent = cat;
-    list.appendChild(g);
-    for (const it of groups[cat]) {
-      const el = document.createElement('div');
-      el.className = 'item' + (it.id === activeId ? ' active' : '');
-      const name = document.createElement('div');
-      name.className = 'name';
-      name.textContent = it.name;
-      const desc = document.createElement('div');
-      desc.className = 'desc';
-      desc.textContent = it.description || it.id;
-      el.appendChild(name);
-      el.appendChild(desc);
-      el.onclick = () => showDetail(it.id);
-      list.appendChild(el);
+    listEl.textContent = '';
+    visibleIds = [];
+
+    if (!filtered.length) {
+        const e = document.createElement('div');
+        e.className = 'empty';
+        e.textContent = items.length
+            ? 'No items match the current filters.'
+            : 'The gallery is empty. Run: token-saver gallery harvest --apply';
+        listEl.appendChild(e);
+        countEl.textContent = items.length ? '0 results' : '0 items';
+        return;
     }
-  }
+
+    countEl.textContent = filtered.length + (filtered.length === 1 ? ' result' : ' results');
+
+    const groups = {};
+    for (const it of filtered) {
+        if (!groups[it.category]) groups[it.category] = [];
+        groups[it.category].push(it);
+    }
+
+    for (const cat of Object.keys(groups).sort()) {
+        const g = document.createElement('div');
+        g.className = 'group';
+        g.textContent = cat;
+        listEl.appendChild(g);
+
+        for (const it of groups[cat]) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'item' + (it.id === activeId ? ' active' : '');
+            button.setAttribute('aria-current', it.id === activeId ? 'true' : 'false');
+            button.setAttribute('aria-selected', it.id === activeId ? 'true' : 'false');
+            button.tabIndex = it.id === activeId ? 0 : -1;
+            button.dataset.id = it.id;
+
+            const name = document.createElement('div');
+            name.className = 'item-name';
+            name.textContent = it.name;
+
+            const desc = document.createElement('div');
+            desc.className = 'item-desc';
+            desc.textContent = it.description || it.id;
+
+            button.appendChild(name);
+            button.appendChild(desc);
+            button.addEventListener('click', () => showDetail(it.id));
+            listEl.appendChild(button);
+            visibleIds.push(it.id);
+        }
+    }
 }
 
-async function showDetail(id) {
-  activeId = id;
-  renderList();
-  const res = await fetch('/api/items/' + encodeURIComponent(id));
-  if (!res.ok) return;
-  const it = await res.json();
-  const d = document.getElementById('detail');
-  d.textContent = '';
-
-  const h = document.createElement('h2');
-  h.textContent = it.name;
-  d.appendChild(h);
-
-  const meta = document.createElement('div');
-  meta.textContent = it.category + ' · ' + it.kind + (it.source ? ' · from ' + it.source : '');
-  meta.style.opacity = '.7';
-  meta.style.fontSize = '.85rem';
-  d.appendChild(meta);
-
-  const row = document.createElement('div');
-  row.className = 'row';
-  const input = document.createElement('input');
-  input.placeholder = 'Workspace folder to install into (absolute path)';
-  const btn = document.createElement('button');
-  btn.textContent = 'Install here';
-  const status = document.createElement('span');
-  status.className = 'status';
-  btn.onclick = () => install(id, input.value, status);
-  row.appendChild(input);
-  row.appendChild(btn);
-  row.appendChild(status);
-  d.appendChild(row);
-
-  const pre = document.createElement('pre');
-  pre.textContent = it.preview || '(no preview)';
-  d.appendChild(pre);
+function focusActiveItem() {
+    if (!activeId) return;
+    const buttons = listEl.querySelectorAll('.item');
+    for (const button of buttons) {
+        if (button.dataset.id === activeId) {
+            button.focus({ preventScroll: true });
+            button.scrollIntoView({ block: 'nearest' });
+            return;
+        }
+    }
 }
 
-async function install(id, dir, status) {
-  if (!dir) { status.textContent = 'Enter a folder path first.'; return; }
-  status.textContent = 'Installing…';
-  const res = await fetch('/api/install', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id, dir })
-  });
-  const data = await res.json();
-  status.textContent = data.ok ? ('Installed: ' + (data.files || []).join(', ')) : ('Error: ' + (data.message || 'failed'));
+function moveSelection(delta) {
+    if (!visibleIds.length) return;
+    const current = visibleIds.indexOf(activeId);
+    const next = current === -1
+        ? (delta > 0 ? 0 : visibleIds.length - 1)
+        : (current + delta + visibleIds.length) % visibleIds.length;
+    showDetail(visibleIds[next], { focusItem: true });
+}
+
+async function showDetail(id, options) {
+    const focusItem = !!(options && options.focusItem);
+    activeId = id;
+    renderList();
+    if (focusItem) {
+        focusActiveItem();
+    }
+    setStatus('', true);
+
+    let it;
+    try {
+        const res = await fetch('/api/items/' + encodeURIComponent(id));
+        if (!res.ok) {
+            setStatus('Could not load item details.', false);
+            return;
+        }
+        it = await res.json();
+    } catch {
+        setStatus('Could not load item details.', false);
+        return;
+    }
+
+    installBtn.disabled = false;
+    installTargetToggleEl.disabled = false;
+
+    detailHeadEl.textContent = '';
+    const h = document.createElement('h2');
+    h.className = 'detail-name';
+    h.textContent = it.name;
+    detailHeadEl.appendChild(h);
+
+    const chips = document.createElement('div');
+    chips.className = 'chips';
+
+    const c1 = document.createElement('span');
+    c1.className = 'chip';
+    c1.textContent = it.category;
+    chips.appendChild(c1);
+
+    const c2 = document.createElement('span');
+    c2.className = 'chip';
+    c2.textContent = it.kind;
+    chips.appendChild(c2);
+
+    if (it.source) {
+        const c3 = document.createElement('span');
+        c3.className = 'chip';
+        c3.textContent = it.source;
+        chips.appendChild(c3);
+    }
+
+    detailHeadEl.appendChild(chips);
+    previewEl.textContent = it.preview || '(no preview)';
+}
+
+async function install(id, dir, targetEditor) {
+    const target = (dir || '').trim();
+    if (!target) {
+        setStatus('Enter a folder path first.', false);
+        return;
+    }
+
+    setStatus('Installing to ' + targetEditor + '...', true);
+    installBtn.disabled = true;
+    installTargetToggleEl.disabled = true;
+    hideInstallMenu();
+    try {
+        const res = await fetch('/api/install', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, dir: target })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            setStatus('Installed to ' + targetEditor + ': ' + (data.files || []).join(', '), true);
+        } else {
+            setStatus('Error: ' + (data.message || 'failed'), false);
+        }
+    } catch {
+        setStatus('Error: request failed.', false);
+    } finally {
+        installBtn.disabled = false;
+        installTargetToggleEl.disabled = false;
+    }
 }
 
 load();

@@ -163,7 +163,7 @@ flowchart LR
 | [`src/gallery.rs`](src/gallery.rs) | The `token-saver gallery` marketplace: harvest, list, install, remove, and a localhost browser UI. |
 | [`src/update.rs`](src/update.rs) | The `token-saver update` self-updater (GitHub Releases, checksum verify, in-place replace). |
 | [`src/otel.rs`](src/otel.rs) | Optional OpenTelemetry / OTLP span export. |
-| [`src/init.rs`](src/init.rs) | `init` / `uninit` for Copilot instructions, `AGENTS.md`, and hooks. |
+| [`src/init.rs`](src/init.rs) | `init` / `uninit` for Copilot instructions, the `token-saver` custom agent, `AGENTS.md`, and hooks. |
 | [`src/hook.rs`](src/hook.rs) | The `token-saver hook` `postToolUse` handler. |
 | [`tests/cli.rs`](tests/cli.rs) | End-to-end CLI integration tests. |
 
@@ -471,6 +471,14 @@ token-saver init --global    # all workspaces -> ~/.copilot/copilot-instructions
 token-saver init --cli       # Copilot CLI / agents -> ./AGENTS.md
 ```
 
+Alongside the instructions, `token-saver init` also writes a **`token-saver` custom
+agent** — `.github/agents/token-saver.agent.md` for workspace/CLI scope, or
+`~/.copilot/agents/token-saver.agent.md` with `--global`. The agent declares only
+built-in tools (no MCP/extension tools) to keep its token cost minimal, and its
+instructions tell the model to talk caveman-short in chat, do the work in
+code/files, and prefix shell commands with `token-saver`. After init, select the
+**token-saver** agent in Copilot Chat to use it.
+
 The `.github/copilot-instructions.md` file is read by both Copilot in the editor
 and the Copilot CLI. `--cli` (alias `--agents`) instead writes the repo-root
 `AGENTS.md` agent file, the cross-tool format the Copilot CLI and other agents
@@ -505,7 +513,8 @@ cloud agent.
 `token-saver uninit` reverses `token-saver init`, taking the same scope flags. It strips only
 the managed block (between the `<!-- token-saver-instructions v1 -->` markers), leaving
 any other content in the file untouched; if that leaves the file empty it is
-deleted. With `--hook` it removes the generated `token-saver.json` hook config instead.
+deleted. It also removes the `token-saver` custom agent written by `init`. With
+`--hook` it removes the generated `token-saver.json` hook config instead.
 
 ```powershell
 token-saver uninit                  # workspace scope -> .github/copilot-instructions.md

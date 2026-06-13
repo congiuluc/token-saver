@@ -5,7 +5,7 @@
 //!   token-saver -x | --extreme <command>   Run and print an even more aggressive summary.
 //!   token-saver --raw <command> ...        Run the command and print its raw output unchanged.
 //!   token-saver - | --stdin                Read stdin and print its compact form.
-//!   token-saver init [--global|--cli]      Register token-saver with GitHub Copilot.
+//!   token-saver init [--global|--cli]      Register token-saver with GitHub Copilot (+ agent).
 //!   token-saver init --hook [--global]     Install a Copilot postToolUse hook.
 //!   token-saver uninit [--global|--cli]    Remove what `token-saver init` configured.
 //!   token-saver uninit --hook [--global]   Remove the Copilot postToolUse hook.
@@ -27,6 +27,7 @@ use std::process::ExitCode;
 use std::time::Instant;
 
 pub mod assess;
+pub mod banner;
 pub mod format;
 pub mod gallery;
 pub mod hook;
@@ -97,7 +98,17 @@ pub fn run() -> ExitCode {
             return match init::run(scope) {
                 Ok(path) => {
                     println!("token-saver: updated Copilot instructions at {}", path.display());
-                    ExitCode::SUCCESS
+                    match init::run_agent(scope) {
+                        Ok(agent_path) => {
+                            println!("token-saver: wrote token-saver agent at {}", agent_path.display());
+                            println!("token-saver: select the \"token-saver\" agent in Copilot Chat to use only built-in tools");
+                            ExitCode::SUCCESS
+                        }
+                        Err(err) => {
+                            eprintln!("token-saver: init failed to write agent: {err}");
+                            ExitCode::from(1)
+                        }
+                    }
                 }
                 Err(err) => {
                     eprintln!("token-saver: init failed: {err}");
@@ -133,10 +144,12 @@ pub fn run() -> ExitCode {
             return match init::uninstall(scope) {
                 Ok(Some(path)) => {
                     println!("token-saver: removed Copilot instructions from {}", path.display());
+                    report_agent_removal(scope);
                     ExitCode::SUCCESS
                 }
                 Ok(None) => {
                     println!("token-saver: no managed token-saver instructions found");
+                    report_agent_removal(scope);
                     ExitCode::SUCCESS
                 }
                 Err(err) => {
@@ -160,6 +173,15 @@ pub fn run() -> ExitCode {
         }
         "context" | "ctx" | "assess" | "assessment" => {
             return assess::run(&args[1..]);
+        }
+        "banner" | "splash" | "logo" => {
+            return match banner::run(&args[1..]) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(err) => {
+                    eprintln!("token-saver: banner failed: {err}");
+                    ExitCode::from(1)
+                }
+            };
         }
         _ => {}
     }
@@ -198,6 +220,18 @@ pub fn run() -> ExitCode {
 /// Maps a process exit code onto a [`ExitCode`], clamping to the 0-255 range.
 fn exit_code(code: i32) -> ExitCode {
     ExitCode::from((code & 0xff) as u8)
+}
+
+/// Removes the `token-saver` custom agent for `scope` and prints the outcome.
+///
+/// Failures are reported but do not change the exit status, so a leftover agent
+/// file never blocks the instruction-block uninstall from succeeding.
+fn report_agent_removal(scope: init::Scope) {
+    match init::uninstall_agent(scope) {
+        Ok(Some(path)) => println!("token-saver: removed token-saver agent from {}", path.display()),
+        Ok(None) => {}
+        Err(err) => eprintln!("token-saver: failed to remove token-saver agent: {err}"),
+    }
 }
 
 /// Reads all of stdin and prints its compact form. Lets you shrink a large
@@ -386,7 +420,7 @@ fn print_usage() {
          \x20 token-saver -x | --extreme <cmd>     Run and print a maximally compressed summary\n\
          \x20 token-saver --raw <command> ...      Run and print raw output (no summary)\n\
          \x20 token-saver - | --stdin             Read stdin and print its compact form\n\
-         \x20 token-saver init [--global|--cli]   Register token-saver with GitHub Copilot\n\
+         \x20 token-saver init [--global|--cli]   Register token-saver with Copilot (writes a token-saver agent)\n\
          \x20 token-saver init --hook [--global]  Install a Copilot postToolUse hook\n\
          \x20 token-saver uninit [--global|--cli] Remove what token-saver init configured\n\
          \x20 token-saver uninit --hook [--global] Remove the Copilot postToolUse hook\n\
@@ -395,6 +429,7 @@ fn print_usage() {
          \x20 token-saver gain --reset            Reset logged token savings\n\
          \x20 token-saver optimize --file <p>     Compact file text; --preview shows it + token diff\n\
          \x20 token-saver context [category]      Inventory Copilot context objects + token cost\n\
+         \x20 token-saver banner [--no-anim]      Show the animated ASCII-art banner\n\
          \x20 token-saver gallery <command>      Harvest/list/install Copilot objects; serve a browser gallery\n\
          \x20 token-saver update [--check|--force] Update token-saver to the latest release\n\
          \x20 token-saver version | -V            Print the installed version\n\

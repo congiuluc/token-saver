@@ -20,7 +20,11 @@ const END_MARKER: &str = "<!-- /token-saver-instructions -->";
 /// Filename for the generated Copilot hook configuration.
 const HOOK_FILE: &str = "token-saver.json";
 
+/// Filename for the generated token-saver custom agent.
+const AGENT_FILE: &str = "token-saver.agent.md";
+
 /// Where the Copilot instructions file should be written.
+#[derive(Clone, Copy)]
 pub enum Scope {
     /// `<cwd>/.github/copilot-instructions.md` — applies to the current repo.
     Workspace,
@@ -107,6 +111,91 @@ pub fn strip(existing: &str) -> Option<String> {
         (false, false) => format!("{before}\n\n{after}\n"),
     };
     Some(out)
+}
+
+/// Writes (or refreshes) the `token-saver` custom agent for `scope` and returns the
+/// path of the file that was written.
+///
+/// The agent declares only built-in tools, so it carries a minimal tool surface
+/// (and therefore a minimal token cost) while still instructing the model to route
+/// shell commands through `ts`.
+pub fn run_agent(scope: Scope) -> io::Result<PathBuf> {
+    let path = agent_path(scope)?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(&path, agent_block())?;
+    Ok(path)
+}
+
+/// Removes the `token-saver` custom agent for `scope` and returns the path removed,
+/// or `None` if no agent file was present.
+pub fn uninstall_agent(scope: Scope) -> io::Result<Option<PathBuf>> {
+    let path = agent_path(scope)?;
+    match fs::remove_file(&path) {
+        Ok(()) => Ok(Some(path)),
+        Err(ref err) if err.kind() == io::ErrorKind::NotFound => Ok(None),
+        Err(err) => Err(err),
+    }
+}
+
+/// Resolves the custom-agent file path for the requested scope.
+///
+/// Global agents live under `~/.copilot/agents/`; workspace and CLI/agents scopes
+/// share the repository's `.github/agents/` directory.
+fn agent_path(scope: Scope) -> io::Result<PathBuf> {
+    match scope {
+        Scope::Global => Ok(home_dir()?.join(".copilot").join("agents").join(AGENT_FILE)),
+        Scope::Workspace | Scope::Agents => {
+            Ok(env::current_dir()?.join(".github").join("agents").join(AGENT_FILE))
+        }
+    }
+}
+
+/// Builds the `token-saver` custom-agent document: front matter declaring only
+/// built-in tools, plus a caveman-style body that demands terse chat output and a
+/// bias toward writing code/files over prose.
+fn agent_block() -> String {
+    "---\n\
+     name: token-saver\n\
+     description: Token-optimized agent. Talk caveman-short in chat, do the work in code/files, route shell commands through `ts`. Built-in tools only.\n\
+     tools: [vscode, execute, read, agent, edit, search, web, browser, todo]\n\
+     ---\n\
+     # token-saver agent\n\
+     \n\
+     Why use many token when few do trick. Brain big, mouth small.\n\
+     \n\
+     ## Output rules\n\
+     \n\
+     - Chat output as short as possible. Fragments over sentences. Drop filler.\n\
+     - No preamble, no recap, no \"I will\", no closing summary. Say what changed, where.\n\
+     - One short line per file touched: `path — what`. That enough.\n\
+     - Do not restate code already written to a file. The file is the answer.\n\
+     - Explain only when asked, or one-line warning for a real risk.\n\
+     - Keep code, paths, commands, error strings byte-exact. Compress prose, not code.\n\
+     \n\
+     ## Do the work\n\
+     \n\
+     - Put work in code and files, not in chat. Create/edit files directly.\n\
+     - Default to acting. Ask only when truly blocked.\n\
+     \n\
+     ## Tools\n\
+     \n\
+     - Built-in tools above only. No MCP or extension tools.\n\
+     - Always prefix shell commands with `ts` so output is summarized:\n\
+     \n\
+     ```bash\n\
+     # Instead of:        Use:\n\
+     git status           ts git status\n\
+     git log              ts git log\n\
+     cargo test           ts cargo test\n\
+     docker ps            ts docker ps\n\
+     npm install          ts npm install\n\
+     ```\n\
+     \n\
+     - `ts -x <command>`    Extreme: errors + one-line stats footer only.\n\
+     - `ts --raw <command>` Bypass summarization, print raw output.\n"
+        .to_string()
 }
 
 /// Deletes the `token-saver` `postToolUse` hook configuration for the requested scope
@@ -254,6 +343,17 @@ mod tests {
         assert!(cfg.contains("\"postToolUse\""));
         assert!(cfg.contains("\"command\": \"token-saver hook\""));
         assert!(cfg.ends_with('\n'));
+    }
+
+    #[test]
+    fn agent_block_declares_builtin_tools_and_ts_rule() {
+        let agent = agent_block();
+        assert!(agent.starts_with("---\n"));
+        assert!(agent.contains("name: token-saver"));
+        assert!(agent.contains("tools: ["));
+        assert!(agent.contains("execute"));
+        assert!(agent.contains("Always prefix shell commands with `ts`"));
+        assert!(agent.ends_with('\n'));
     }
 
     #[test]
