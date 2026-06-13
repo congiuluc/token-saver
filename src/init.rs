@@ -205,22 +205,22 @@ fn block() -> String {
          \n\
          ## Rule\n\
          \n\
-         Always prefix shell commands with `tokensaver`:\n\
+         Always prefix shell commands with `ts`:\n\
          \n\
          ```bash\n\
          # Instead of:        Use:\n\
-         git status           tokensaver git status\n\
-         git log              tokensaver git log\n\
-         cargo test           tokensaver cargo test\n\
-         docker ps            tokensaver docker ps\n\
-         kubectl get pods     tokensaver kubectl get pods\n\
-         npm install          tokensaver npm install\n\
+         git status           ts git status\n\
+         git log              ts git log\n\
+         cargo test           ts cargo test\n\
+         docker ps            ts docker ps\n\
+         kubectl get pods     ts kubectl get pods\n\
+         npm install          ts npm install\n\
          ```\n\
          \n\
          ## Modes\n\
          \n\
-         - `tokensaver -x <command>`    Extreme mode: errors + a one-line stats footer only.\n\
-         - `tokensaver --raw <command>` Bypass summarization and print raw output.\n\
+         - `ts -x <command>`    Extreme mode: errors + a one-line stats footer only.\n\
+         - `ts --raw <command>` Bypass summarization and print raw output.\n\
          {END_MARKER}"
     )
 }

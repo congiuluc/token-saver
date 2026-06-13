@@ -18,10 +18,12 @@ pub fn rewrite_status(_args: &[String]) -> Vec<String> {
 /// Rewrites `git diff [args]` to `git diff --stat [args]` unless the user
 /// already requested a summary/format flag.
 pub fn rewrite_diff(args: &[String]) -> Vec<String> {
-    if args
-        .iter()
-        .any(|a| matches!(a.as_str(), "--stat" | "--numstat" | "--shortstat" | "--name-only"))
-    {
+    if args.iter().any(|a| {
+        matches!(
+            a.as_str(),
+            "--stat" | "--numstat" | "--shortstat" | "--name-only"
+        )
+    }) {
         return args.to_vec();
     }
     let mut out = vec!["git".to_string(), "diff".to_string(), "--stat".to_string()];
@@ -35,9 +37,10 @@ pub fn rewrite_log(args: &[String]) -> Vec<String> {
     let has_format = args
         .iter()
         .any(|a| a.starts_with("--pretty") || a.starts_with("--format") || a == "--oneline");
-    let has_count = args
-        .iter()
-        .any(|a| a == "-n" || (a.starts_with('-') && a[1..].chars().all(|c| c.is_ascii_digit()) && a.len() > 1));
+    let has_count = args.iter().any(|a| {
+        a == "-n"
+            || (a.starts_with('-') && a[1..].chars().all(|c| c.is_ascii_digit()) && a.len() > 1)
+    });
 
     let mut out = vec!["git".to_string(), "log".to_string()];
     if !has_format {
@@ -227,7 +230,9 @@ mod tests {
 
     #[test]
     fn separates_staged_and_modified() {
-        let summary = status(&outcome("## dev\nM  staged.rs\n M worktree.rs\nMM both.rs\n"));
+        let summary = status(&outcome(
+            "## dev\nM  staged.rs\n M worktree.rs\nMM both.rs\n",
+        ));
         assert_eq!(
             summary,
             "* dev\n+ 2  staged.rs, both.rs\n~ 2  worktree.rs, both.rs"
@@ -258,7 +263,11 @@ mod tests {
 
     #[test]
     fn rewrite_diff_respects_existing_stat_flag() {
-        let a = vec!["git".to_string(), "diff".to_string(), "--numstat".to_string()];
+        let a = vec![
+            "git".to_string(),
+            "diff".to_string(),
+            "--numstat".to_string(),
+        ];
         assert_eq!(rewrite_diff(&a), a);
     }
 

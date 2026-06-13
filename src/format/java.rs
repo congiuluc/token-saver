@@ -48,8 +48,16 @@ pub fn maven(out: &Outcome) -> String {
         None => return generic::summarize(out),
     };
 
-    let verdict = if success { "BUILD SUCCESS" } else { "BUILD FAILURE" };
-    let symbol = if success && out.code == 0 { "✓" } else { "✗" };
+    let verdict = if success {
+        "BUILD SUCCESS"
+    } else {
+        "BUILD FAILURE"
+    };
+    let symbol = if success && out.code == 0 {
+        "✓"
+    } else {
+        "✗"
+    };
     let head = match &test_summary {
         Some(s) => format!("{symbol} maven: {verdict} · {s}"),
         None => format!("{symbol} maven: {verdict}"),

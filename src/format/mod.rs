@@ -65,9 +65,10 @@ pub fn summarize(args: &[String], out: &Outcome, extreme: bool) -> String {
         ("poetry", "install") | ("poetry", "add") | ("poetry", "update") | ("poetry", "remove") => {
             pkg::poetry(out)
         }
-        ("dotnet", "build") | ("dotnet", "publish") | ("dotnet", "pack") | ("dotnet", "msbuild") => {
-            dotnet::build(out)
-        }
+        ("dotnet", "build")
+        | ("dotnet", "publish")
+        | ("dotnet", "pack")
+        | ("dotnet", "msbuild") => dotnet::build(out),
         ("dotnet", "test") => dotnet::test(out),
         ("dotnet", "restore") => dotnet::restore(out),
         ("mvn", _) | ("mvnw", _) => java::maven(out),
@@ -160,7 +161,7 @@ fn arg(args: &[String], index: usize) -> Option<&str> {
 fn base_name(cmd: &str) -> String {
     let file = cmd.rsplit(['/', '\\']).next().unwrap_or(cmd);
     let stem = match file.rsplit_once('.') {
-        Some((stem, ext)) if matches!(ext, "bat" | "cmd" | "exe" | "ps1") => stem,
+        Some((stem, "bat" | "cmd" | "exe" | "ps1")) => stem,
         _ => file,
     };
     stem.to_ascii_lowercase()

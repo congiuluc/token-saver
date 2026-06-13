@@ -74,7 +74,8 @@ pub fn record(mode: &str, command: &str, raw: &str, out: &str, duration: Duratio
     let out_tokens_heuristic = out_estimate.heuristic;
     let raw_tokens_model = raw_estimate.model.unwrap_or(0);
     let out_tokens_model = out_estimate.model.unwrap_or(0);
-    let model_tokens_present = u64::from(raw_estimate.model.is_some() && out_estimate.model.is_some());
+    let model_tokens_present =
+        u64::from(raw_estimate.model.is_some() && out_estimate.model.is_some());
 
     if let Some(path) = log_path() {
         let line = format!(
@@ -144,9 +145,7 @@ pub fn reset_log() -> std::io::Result<ResetOutcome> {
                 .map_err(|truncate_err| {
                     Error::new(
                         truncate_err.kind(),
-                        format!(
-                            "remove failed: {err}; truncate fallback failed: {truncate_err}"
-                        ),
+                        format!("remove failed: {err}; truncate fallback failed: {truncate_err}"),
                     )
                 })?;
             Ok(ResetOutcome::Cleared(path))

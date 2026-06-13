@@ -1,0 +1,15 @@
+[book]
+authors = ["TokenSaver contributors"]
+language = "en"
+multilingual = false
+src = "src"
+title = "TokenSaver Documentation"
+
+[build]
+build-dir = "book"
+
+[output.html]
+git-repository-url = "https://github.com/congiuluc/TokenSaver"
+site-url = "/TokenSaver/"
+default-theme = "light"
+preferred-dark-theme = "navy"

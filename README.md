@@ -22,6 +22,13 @@ $ tokensaver git status
 
 …instead of the full multi-line `git status` text.
 
+## Project health
+
+- Community docs: [Code of Conduct](CODE_OF_CONDUCT.md), [Contributing](CONTRIBUTING.md), [Security](SECURITY.md), [Support](SUPPORT.md)
+- Changelog: [CHANGELOG.md](CHANGELOG.md)
+- Documentation website source: [`docs/`](docs/)
+- Documentation website (GitHub Pages): `https://congiuluc.github.io/TokenSaver/`
+
 ## Contents
 
 - [Description](#description) — the two-layer summarization model
@@ -132,7 +139,7 @@ flowchart LR
 
 | Path | Responsibility |
 | ---- | -------------- |
-| [`src/main.rs`](src/main.rs) | CLI entry: argument parsing and subcommand dispatch (`run`, `--raw`, `--stdin`, `init`, `uninit`, `hook`, `gain`, `tokens`). |
+| [`src/main.rs`](src/main.rs) | CLI entry: argument parsing and subcommand dispatch (`run`, `--raw`, `--stdin`, `init`, `uninit`, `hook`, `gain`, `tokens`, `context`). |
 | [`src/runner.rs`](src/runner.rs) | Spawns the child process and captures stdout / stderr / exit code into `Outcome`. |
 | [`src/format/mod.rs`](src/format/mod.rs) | Routing layer: `rewrite()`, `summarize()`, `summarize_text()`, base-name normalization, and the unknown-command `other()` fallback. |
 | [`src/format/generic.rs`](src/format/generic.rs) | The heuristic compressor: ANSI stripping, blank-run collapsing, duplicate folding, signal extraction, head/tail excerpts, and the tunable budgets. |
@@ -151,6 +158,8 @@ flowchart LR
 | [`src/format/table.rs`](src/format/table.rs) | Shared helpers for compacting tabular output. |
 | [`src/tokenizer.rs`](src/tokenizer.rs) | Token-counting backends (`gpt5`, `o200k`, `cl100k`, `heuristic`). |
 | [`src/metrics.rs`](src/metrics.rs) | JSONL gain logging and the `tokensaver gain` report. |
+| [`src/optimize.rs`](src/optimize.rs) | The `tokensaver optimize` text compactor (preview + apply, token-diff summary). |
+| [`src/assess.rs`](src/assess.rs) | The `tokensaver context` Copilot context inventory (parallel scan, token accounting, Markdown/JSON export). |
 | [`src/otel.rs`](src/otel.rs) | Optional OpenTelemetry / OTLP span export. |
 | [`src/init.rs`](src/init.rs) | `init` / `uninit` for Copilot instructions, `AGENTS.md`, and hooks. |
 | [`src/hook.rs`](src/hook.rs) | The `tokensaver hook` `postToolUse` handler. |
@@ -244,8 +253,68 @@ tokensaver gain --reset             Reset logged token savings
 tokensaver tokens --prompt <text>   Count words for inline prompt text
 tokensaver tokens --file <path>     Count words for file content
 tokensaver tokens --stdin           Read stdin and count words
+tokensaver optimize --file <path>   Compact a file's text + report token savings
+tokensaver context [category]       Inventory Copilot context objects + token cost
 tokensaver -h | --help              Show help
 ```
+
+### Optimize a file's text (`optimize`)
+
+`tokensaver optimize` losslessly compacts the *text* of a file to cut its token
+cost. The transformation is deterministic and meaning-preserving (no model
+calls): it normalizes line endings, strips trailing whitespace, collapses
+repeated inner whitespace (keeping leading indentation) and runs of blank lines,
+and trims leading/trailing blank lines.
+
+With `--preview` it prints the optimized text plus a before/after token summary
+and **writes nothing** — re-run without `--preview` to apply the change in place
+(or send it elsewhere with `--out`). Applied optimizations are recorded so they
+show up in `tokensaver gain`.
+
+```text
+tokensaver optimize --file <path>           Rewrite the file in place, print savings
+tokensaver optimize --file <path> --preview Show optimized text + token diff (no write)
+tokensaver optimize --file <path> --out <p> Write the optimized text to another path
+tokensaver optimize --stdin                 Read stdin, emit optimized text to stdout
+tokensaver optimize --prompt "<text>"       Optimize inline text
+tokensaver optimize --file <path> --json    Emit machine-readable JSON
+```
+
+The summary reports the active tokenizer, before/after token counts, tokens
+saved (with percentage), character counts and line counts.
+
+### Inventory Copilot context (`context`)
+
+`tokensaver context` walks the current workspace **and** your whole device to find
+the GitHub Copilot context objects the agent can load — custom instructions
+(`copilot-instructions.md`, `AGENTS.md`, `*.instructions.md`), prompt files
+(`*.prompt.md`), agents / chat modes (`*.agent.md`, `*.chatmode.md`), skills
+(`SKILL.md`) and MCP tool configs (`mcp.json`) — and estimates the token cost of
+each, grouped by category.
+
+It distinguishes **always-on** cost (content loaded into every request, such as
+broad instruction files and MCP configs) from **on-demand** cost (skills, prompts
+and agents only contribute their description to the always-on menu; their body
+loads when invoked). Agent / chat-mode files are annotated with the number of
+tools they declare in frontmatter, and MCP configs with their server count. The
+device-wide scan runs in parallel across all available cores and prints progress
+to stderr.
+
+```text
+tokensaver context                  Inventory workspace + device
+tokensaver context agents           Limit to one category (also: -c/--category)
+tokensaver context --workspace      Scan only the current workspace (-w)
+tokensaver context --user           Scan only user/device locations (-u)
+tokensaver context --top N          Show the N largest consumers (default 5)
+tokensaver context --window N       Context window used for budget % (default 128000)
+tokensaver context --md <file>      Export the report to a Markdown file (-o/--out)
+tokensaver context --json           Emit machine-readable JSON
+tokensaver context --quiet          Suppress progress messages (-q)
+```
+
+Categories accept singular or plural, case-insensitively: `instructions`,
+`prompts`, `agents` (or `chatmode`), `skills`, `tools` (or `mcp`).
+
 
 ### Examples
 

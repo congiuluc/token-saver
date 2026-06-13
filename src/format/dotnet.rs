@@ -105,7 +105,11 @@ pub fn test(out: &Outcome) -> String {
     failures.dedup();
     let symbol = if out.code == 0 { "✓" } else { "✗" };
     // Strip the leading "Passed! / Failed!" marker, keeping the count detail.
-    let detail = summary.splitn(2, " - ").nth(1).unwrap_or(&summary).trim();
+    let detail = summary
+        .split_once(" - ")
+        .map(|x| x.1)
+        .unwrap_or(&summary)
+        .trim();
     let mut lines = vec![format!("{symbol} tests: {detail}")];
     for name in failures.iter().take(10) {
         lines.push(format!("  - {name}"));
@@ -171,8 +175,9 @@ mod tests {
     #[test]
     fn summarizes_build_failure_with_errors() {
         let out = Outcome {
-            stdout: "Program.cs(12,5): error CS1002: ; expected [/repo/App.csproj]\n    1 Error(s)\n"
-                .to_string(),
+            stdout:
+                "Program.cs(12,5): error CS1002: ; expected [/repo/App.csproj]\n    1 Error(s)\n"
+                    .to_string(),
             stderr: String::new(),
             code: 1,
         };

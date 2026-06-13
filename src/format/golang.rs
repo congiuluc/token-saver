@@ -45,7 +45,7 @@ pub fn test(out: &Outcome) -> String {
     for line in text.lines() {
         let trimmed = line.trim();
         if let Some(rest) = trimmed.strip_prefix("--- FAIL:") {
-            if let Some(name) = rest.trim().split_whitespace().next() {
+            if let Some(name) = rest.split_whitespace().next() {
                 failures.push(name.to_string());
             }
         }

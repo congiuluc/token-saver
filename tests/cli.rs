@@ -22,7 +22,10 @@ fn no_args_prints_usage_and_exits_two() {
 
 #[test]
 fn help_flag_prints_usage_and_exits_zero() {
-    let output = Command::new(BIN).arg("--help").output().expect("run tokensaver");
+    let output = Command::new(BIN)
+        .arg("--help")
+        .output()
+        .expect("run tokensaver");
     assert_eq!(output.status.code(), Some(0));
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("USAGE:"), "stderr was: {stderr}");
@@ -30,7 +33,10 @@ fn help_flag_prints_usage_and_exits_zero() {
 
 #[test]
 fn summarizes_child_stdout() {
-    let output = Command::new(BIN).args(ECHO).output().expect("run tokensaver");
+    let output = Command::new(BIN)
+        .args(ECHO)
+        .output()
+        .expect("run tokensaver");
     assert_eq!(output.status.code(), Some(0));
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("tokensavertoken"), "stdout was: {stdout}");
@@ -40,7 +46,10 @@ fn summarizes_child_stdout() {
 fn raw_flag_passes_child_output_through() {
     let mut args = vec!["--raw"];
     args.extend_from_slice(ECHO);
-    let output = Command::new(BIN).args(&args).output().expect("run tokensaver");
+    let output = Command::new(BIN)
+        .args(&args)
+        .output()
+        .expect("run tokensaver");
     assert_eq!(output.status.code(), Some(0));
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("tokensavertoken"), "stdout was: {stdout}");
@@ -63,8 +72,14 @@ fn tokens_prompt_reports_counts() {
         .expect("run tokensaver");
     assert_eq!(output.status.code(), Some(0));
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("tokensaver — word count"), "stdout was: {stdout}");
-    assert!(stdout.contains("source:       prompt"), "stdout was: {stdout}");
+    assert!(
+        stdout.contains("tokensaver — word count"),
+        "stdout was: {stdout}"
+    );
+    assert!(
+        stdout.contains("source:       prompt"),
+        "stdout was: {stdout}"
+    );
     assert!(stdout.contains("words:        2"), "stdout was: {stdout}");
     assert!(stdout.contains("lines:        1"), "stdout was: {stdout}");
     assert!(stdout.contains("L1: 2"), "stdout was: {stdout}");
@@ -84,8 +99,14 @@ fn tokens_file_reports_counts() {
 
     assert_eq!(output.status.code(), Some(0));
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("tokensaver — word count"), "stdout was: {stdout}");
-    assert!(stdout.contains("source:       file:"), "stdout was: {stdout}");
+    assert!(
+        stdout.contains("tokensaver — word count"),
+        "stdout was: {stdout}"
+    );
+    assert!(
+        stdout.contains("source:       file:"),
+        "stdout was: {stdout}"
+    );
     assert!(stdout.contains("words:"), "stdout was: {stdout}");
     assert!(stdout.contains("by line:"), "stdout was: {stdout}");
 }
@@ -121,4 +142,113 @@ fn gain_reset_clears_metrics_log() {
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("reset gain stats"), "stdout was: {stdout}");
     assert!(!temp.exists(), "metrics log should be removed");
+}
+
+/// Builds an isolated workspace + home directory and returns their paths.
+fn context_fixture(tag: &str) -> (std::path::PathBuf, std::path::PathBuf) {
+    let root = env::temp_dir().join(format!("tokensaver_ctx_{tag}_{}", std::process::id()));
+    let _ = fs::remove_dir_all(&root);
+    let workspace = root.join("workspace");
+    let home = root.join("home");
+    fs::create_dir_all(workspace.join(".github")).expect("create .github");
+    fs::create_dir_all(workspace.join(".copilot").join("skills").join("demo"))
+        .expect("create skills dir");
+    fs::create_dir_all(&home).expect("create home");
+
+    fs::write(
+        workspace.join(".github").join("copilot-instructions.md"),
+        "Always be concise and helpful in every response.\n",
+    )
+    .expect("write instructions");
+    fs::write(
+        workspace.join(".copilot").join("skills").join("demo").join("SKILL.md"),
+        "---\nname: demo\ndescription: A demo skill for testing context inventory.\n---\n# Demo\nBody text.\n",
+    )
+    .expect("write skill");
+    (workspace, home)
+}
+
+#[test]
+fn context_lists_categories_and_summary() {
+    let (workspace, home) = context_fixture("list");
+
+    let output = Command::new(BIN)
+        .arg("context")
+        .arg("--workspace")
+        .current_dir(&workspace)
+        .env("USERPROFILE", &home)
+        .env("HOME", &home)
+        .output()
+        .expect("run tokensaver");
+
+    let _ = fs::remove_dir_all(workspace.parent().unwrap());
+
+    assert_eq!(output.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        stdout.contains("Copilot context inventory"),
+        "stdout was: {stdout}"
+    );
+    assert!(stdout.contains("Instructions"), "stdout was: {stdout}");
+    assert!(stdout.contains("Skills"), "stdout was: {stdout}");
+    assert!(
+        stdout.contains("always-on baseline:"),
+        "stdout was: {stdout}"
+    );
+}
+
+#[test]
+fn context_category_filter_limits_output() {
+    let (workspace, home) = context_fixture("filter");
+
+    let output = Command::new(BIN)
+        .args(["context", "skills", "--workspace"])
+        .current_dir(&workspace)
+        .env("USERPROFILE", &home)
+        .env("HOME", &home)
+        .output()
+        .expect("run tokensaver");
+
+    let _ = fs::remove_dir_all(workspace.parent().unwrap());
+
+    assert_eq!(output.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("Skills"), "stdout was: {stdout}");
+    assert!(!stdout.contains("\nInstructions ("), "stdout was: {stdout}");
+}
+
+#[test]
+fn context_json_flag_emits_json() {
+    let (workspace, home) = context_fixture("json");
+
+    let output = Command::new(BIN)
+        .args(["ctx", "--workspace", "--json"])
+        .current_dir(&workspace)
+        .env("USERPROFILE", &home)
+        .env("HOME", &home)
+        .output()
+        .expect("run tokensaver");
+
+    let _ = fs::remove_dir_all(workspace.parent().unwrap());
+
+    assert_eq!(output.status.code(), Some(0));
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.trim_start().starts_with('{'), "stdout was: {stdout}");
+    assert!(stdout.contains("\"items\":["), "stdout was: {stdout}");
+    assert!(
+        stdout.contains("\"category\":\"instructions\""),
+        "stdout was: {stdout}"
+    );
+}
+
+#[test]
+fn context_rejects_unknown_category() {
+    let output = Command::new(BIN)
+        .args(["context", "bogus"])
+        .output()
+        .expect("run tokensaver");
+
+    assert_eq!(output.status.code(), Some(2));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("unknown category"), "stderr was: {stderr}");
 }

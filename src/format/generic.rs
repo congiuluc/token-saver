@@ -46,7 +46,11 @@ fn summarize_mode(out: &Outcome, extreme: bool) -> String {
     }
 
     let lines = normalize(&text);
-    let max = if extreme { MAX_LINES_EXTREME } else { MAX_LINES };
+    let max = if extreme {
+        MAX_LINES_EXTREME
+    } else {
+        MAX_LINES
+    };
     let mut body = if lines.len() <= max {
         lines.join("\n")
     } else {
@@ -118,8 +122,19 @@ fn stats_footer(total: usize, errors: usize, warnings: usize) -> String {
 fn is_error(line: &str) -> bool {
     let l = line.to_ascii_lowercase();
     [
-        "error", "fatal", "panic", "exception", "traceback", "failed", "failure",
-        "cannot", "denied", "no such", "not found", "unable to", "✗",
+        "error",
+        "fatal",
+        "panic",
+        "exception",
+        "traceback",
+        "failed",
+        "failure",
+        "cannot",
+        "denied",
+        "no such",
+        "not found",
+        "unable to",
+        "✗",
     ]
     .iter()
     .any(|kw| l.contains(kw))
@@ -137,8 +152,16 @@ fn is_warning(line: &str) -> bool {
 fn is_summary(line: &str) -> bool {
     let l = line.to_ascii_lowercase();
     [
-        "passed", "failed", " tests", "test result", "files changed",
-        "vulnerabilit", "added ", "removed ", "success", "completed",
+        "passed",
+        "failed",
+        " tests",
+        "test result",
+        "files changed",
+        "vulnerabilit",
+        "added ",
+        "removed ",
+        "success",
+        "completed",
     ]
     .iter()
     .any(|kw| l.contains(kw))

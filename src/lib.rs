@@ -13,6 +13,8 @@
 //!   tokensaver gain                       Show logged token savings.
 //!   tokensaver gain --reset               Reset logged token savings.
 //!   tokensaver tokens ...                 Calculate tokens for prompt text or file content.
+//!   tokensaver optimize --file <path>     Compact a file's text and report token savings.
+//!   tokensaver context [category]         Inventory Copilot context objects and their token cost.
 //!   tokensaver -h | --help                Show usage.
 
 use std::env;
@@ -21,10 +23,12 @@ use std::io::{self, Read};
 use std::process::ExitCode;
 use std::time::Instant;
 
+pub mod assess;
 pub mod format;
 pub mod hook;
 pub mod init;
 pub mod metrics;
+pub mod optimize;
 pub mod otel;
 pub mod runner;
 pub mod tokenizer;
@@ -59,7 +63,10 @@ pub fn run() -> ExitCode {
             if args.iter().any(|a| a == "--hook" || a == "--hooks") {
                 return match init::run_hook(global) {
                     Ok(path) => {
-                        println!("tokensaver: wrote Copilot hook config at {}", path.display());
+                        println!(
+                            "tokensaver: wrote Copilot hook config at {}",
+                            path.display()
+                        );
                         ExitCode::SUCCESS
                     }
                     Err(err) => {
@@ -77,7 +84,10 @@ pub fn run() -> ExitCode {
             };
             return match init::run(scope) {
                 Ok(path) => {
-                    println!("tokensaver: updated Copilot instructions at {}", path.display());
+                    println!(
+                        "tokensaver: updated Copilot instructions at {}",
+                        path.display()
+                    );
                     ExitCode::SUCCESS
                 }
                 Err(err) => {
@@ -91,7 +101,10 @@ pub fn run() -> ExitCode {
             if args.iter().any(|a| a == "--hook" || a == "--hooks") {
                 return match init::uninstall_hook(global) {
                     Ok(Some(path)) => {
-                        println!("tokensaver: removed Copilot hook config at {}", path.display());
+                        println!(
+                            "tokensaver: removed Copilot hook config at {}",
+                            path.display()
+                        );
                         ExitCode::SUCCESS
                     }
                     Ok(None) => {
@@ -138,6 +151,12 @@ pub fn run() -> ExitCode {
         }
         "tokens" => {
             return run_tokens(&args[1..]);
+        }
+        "optimize" | "opt" => {
+            return optimize::run(&args[1..]);
+        }
+        "context" | "ctx" | "assess" | "assessment" => {
+            return assess::run(&args[1..]);
         }
         _ => {}
     }
@@ -391,6 +410,8 @@ fn print_usage() {
          \x20 tokensaver hook                    Run as a Copilot postToolUse hook (reads stdin)\n\
          \x20 tokensaver gain                    Show logged token savings\n\
          \x20 tokensaver gain --reset            Reset logged token savings\n\
+         \x20 tokensaver optimize --file <p>     Compact file text; --preview shows it + token diff\n\
+         \x20 tokensaver context [category]      Inventory Copilot context objects + token cost\n\
          \x20 tokensaver -h | --help              Show this help\n\
          \n\
          EXAMPLES:\n\

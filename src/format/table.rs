@@ -23,7 +23,11 @@ pub fn select(text: &str, keep: &[&str]) -> Option<Vec<Vec<String>>> {
     // Map each requested column name to its index in the detected header.
     let chosen: Vec<usize> = keep
         .iter()
-        .filter_map(|name| columns.iter().position(|c| c.name.eq_ignore_ascii_case(name)))
+        .filter_map(|name| {
+            columns
+                .iter()
+                .position(|c| c.name.eq_ignore_ascii_case(name))
+        })
         .collect();
     if chosen.is_empty() {
         return None;

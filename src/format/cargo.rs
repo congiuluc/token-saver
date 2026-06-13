@@ -14,7 +14,7 @@ pub fn build(out: &Outcome) -> String {
         let trimmed = line.trim_start();
         if trimmed.starts_with("warning:") {
             warnings += 1;
-        } else if trimmed.starts_with("error") && trimmed[5..].starts_with(|c| c == ':' || c == '[') {
+        } else if trimmed.starts_with("error") && trimmed[5..].starts_with([':', '[']) {
             errors.push(trimmed.to_string());
         }
     }

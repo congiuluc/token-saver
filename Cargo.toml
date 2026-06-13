@@ -4,6 +4,12 @@ version = "0.1.0"
 edition = "2021"
 description = "A CLI proxy that runs another command and prints an extremely compact summary of its output, with no AI involved."
 license = "MIT"
+readme = "README.md"
+repository = "https://github.com/congiuluc/TokenSaver"
+homepage = "https://github.com/congiuluc/TokenSaver"
+documentation = "https://congiuluc.github.io/TokenSaver/"
+keywords = ["cli", "developer-tools", "summarization", "terminal", "tokens"]
+categories = ["command-line-utilities", "development-tools"]
 
 [[bin]]
 name = "tokensaver"
