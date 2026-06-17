@@ -31,6 +31,35 @@ need uname
 need tar
 need mktemp
 
+install_from_source() {
+    command -v cargo >/dev/null 2>&1 || err "release archive unavailable and cargo is not installed; install Rust or publish a GitHub release."
+    command -v git >/dev/null 2>&1 || err "release archive unavailable and git is not installed; install Git or publish a GitHub release."
+
+    cargo_root="$tmp/cargo-root"
+    printf 'Release archive unavailable; building token-saver from source with cargo.\n'
+    if [ "$VERSION" = "latest" ]; then
+        cargo install --locked --force --root "$cargo_root" --git "https://github.com/${REPO}" || err "cargo install failed"
+    else
+        cargo install --locked --force --root "$cargo_root" --git "https://github.com/${REPO}" --tag "$VERSION" || err "cargo install failed"
+    fi
+
+    mkdir -p "$BIN_DIR"
+    install -m 0755 "$cargo_root/bin/token-saver" "$BIN_DIR/token-saver"
+    install -m 0755 "$cargo_root/bin/ts" "$BIN_DIR/ts"
+
+    printf 'Installed token-saver and ts to %s\n' "$BIN_DIR"
+
+    case ":$PATH:" in
+        *":$BIN_DIR:"*) ;;
+        *)
+            printf '\nNote: %s is not on your PATH. Add this to your shell profile:\n' "$BIN_DIR"
+            printf '  export PATH="%s:$PATH"\n' "$BIN_DIR"
+            ;;
+    esac
+
+    printf '\nRun "token-saver --help" to get started.\n'
+}
+
 # Pick a downloader.
 if command -v curl >/dev/null 2>&1; then
     download() { curl -fsSL "$1" -o "$2"; }
@@ -69,7 +98,10 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 printf 'Downloading %s ...\n' "$asset"
-download "${base}/${asset}" "${tmp}/${asset}" || err "failed to download ${asset}"
+if ! download "${base}/${asset}" "${tmp}/${asset}"; then
+    install_from_source
+    exit 0
+fi
 
 # Verify checksum when a checksum tool and the .sha256 file are available.
 if download "${base}/${asset}.sha256" "${tmp}/${asset}.sha256" 2>/dev/null; then

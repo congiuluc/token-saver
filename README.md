@@ -214,6 +214,8 @@ or building from source.
 These one-liners download the right prebuilt archive for your platform from the
 [latest GitHub release](https://github.com/congiuluc/token-saver/releases/latest),
 verify its checksum, and install the `token-saver` and `ts` binaries onto your `PATH`.
+If no release archive is available yet, the installer falls back to building
+from source with Cargo.
 
 **Linux / macOS** (installs to `~/.local/bin`):
 

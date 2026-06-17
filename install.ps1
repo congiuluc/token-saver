@@ -33,6 +33,54 @@ if ([string]::IsNullOrWhiteSpace($BinDir)) {
     $BinDir = Join-Path $env:LOCALAPPDATA "Programs\token-saver"
 }
 
+function Install-FromSource {
+    param(
+        [string]$Tag
+    )
+
+    if (-not (Get-Command cargo -ErrorAction SilentlyContinue)) {
+        throw "release archive unavailable and cargo is not installed; install Rust or publish a GitHub release."
+    }
+    if (-not (Get-Command git -ErrorAction SilentlyContinue)) {
+        throw "release archive unavailable and git is not installed; install Git or publish a GitHub release."
+    }
+
+    $sourceRoot = Join-Path $tmp "cargo-root"
+    $cargoArgs = @(
+        "install"
+        "--locked"
+        "--force"
+        "--root"
+        $sourceRoot
+        "--git"
+        "https://github.com/$repo"
+    )
+    if ($Tag -ne "latest") {
+        $cargoArgs += @("--tag", $Tag)
+    }
+
+    Write-Warning "Release archive unavailable; building token-saver from source with cargo."
+    & cargo @cargoArgs
+    if ($LASTEXITCODE -ne 0) {
+        throw "cargo install failed with exit code $LASTEXITCODE."
+    }
+
+    New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
+    Copy-Item (Join-Path $sourceRoot "bin\token-saver.exe") (Join-Path $BinDir "token-saver.exe") -Force
+    Copy-Item (Join-Path $sourceRoot "bin\ts.exe") (Join-Path $BinDir "ts.exe") -Force
+
+    Write-Host "Installed token-saver.exe and ts.exe to $BinDir"
+
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    if ($userPath -notlike "*$BinDir*") {
+        [Environment]::SetEnvironmentVariable("Path", "$userPath;$BinDir", "User")
+        Write-Host "Added $BinDir to your user PATH. Restart your terminal to use it."
+    }
+
+    Write-Host ""
+    Write-Host 'Run "token-saver --help" to get started.'
+}
+
 # Detect CPU architecture.
 $arch = switch ($env:PROCESSOR_ARCHITECTURE) {
     "AMD64" { "x86_64" }
@@ -56,7 +104,13 @@ New-Item -ItemType Directory -Force -Path $tmp | Out-Null
 try {
     $zipPath = Join-Path $tmp $asset
     Write-Host "Downloading $asset ..."
-    Invoke-WebRequest -Uri "$base/$asset" -OutFile $zipPath -UseBasicParsing
+    try {
+        Invoke-WebRequest -Uri "$base/$asset" -OutFile $zipPath -UseBasicParsing
+    }
+    catch {
+        Install-FromSource -Tag $Version
+        return
+    }
 
     # Verify checksum when the .sha256 file is published.
     try {

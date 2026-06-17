@@ -10,6 +10,8 @@ the [GitHub Releases page](https://github.com/congiuluc/token-saver/releases). T
 install scripts below pick the correct archive for your OS and architecture,
 verify its SHA-256 checksum, and place the `token-saver` and `ts` binaries on your
 `PATH`.
+If the release archive is unavailable, the scripts fall back to building from
+source with Cargo.
 
 ### Linux and macOS
 
