@@ -39,7 +39,7 @@ as described in that document.
 
 ## Development workflow
 
-The project is a small Rust CLI with two binaries (`token-saver` and `ts`) that
+The project is a small Rust CLI with two binaries (`token-saver` and `tks`) that
 both delegate to `token_saver::run()` in [`src/lib.rs`](src/lib.rs). Most work
 falls into one of these areas:
 

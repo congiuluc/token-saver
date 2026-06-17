@@ -143,8 +143,8 @@ fn perform_update(tag: &str) -> io::Result<PathBuf> {
 
     replace_binary(&current_exe, &new_bin)?;
 
-    // Best-effort: refresh the sibling `ts` alias if it lives alongside us.
-    let ts_name = exe_name("ts");
+    // Best-effort: refresh the sibling `tks` alias if it lives alongside us.
+    let ts_name = exe_name("tks");
     let ts_target = install_dir.join(&ts_name);
     let ts_new = extracted.join(&ts_name);
     if ts_new.exists() && ts_target.exists() {

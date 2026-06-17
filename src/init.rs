@@ -118,7 +118,7 @@ pub fn strip(existing: &str) -> Option<String> {
 ///
 /// The agent declares only built-in tools, so it carries a minimal tool surface
 /// (and therefore a minimal token cost) while still instructing the model to route
-/// shell commands through `ts`.
+/// shell commands through `tks`.
 pub fn run_agent(scope: Scope) -> io::Result<PathBuf> {
     let path = agent_path(scope)?;
     if let Some(parent) = path.parent() {
@@ -158,7 +158,7 @@ fn agent_path(scope: Scope) -> io::Result<PathBuf> {
 fn agent_block() -> String {
     "---\n\
      name: token-saver\n\
-     description: Token-optimized agent. Talk caveman-short in chat, do the work in code/files, route shell commands through `ts`. Built-in tools only.\n\
+     description: Token-optimized agent. Talk caveman-short in chat, do the work in code/files, route shell commands through `tks`. Built-in tools only.\n\
      tools: [vscode, execute, read, agent, edit, search, web, browser, todo]\n\
      ---\n\
      # token-saver agent\n\
@@ -182,19 +182,19 @@ fn agent_block() -> String {
      ## Tools\n\
      \n\
      - Built-in tools above only. No MCP or extension tools.\n\
-     - Always prefix shell commands with `ts` so output is summarized:\n\
+     - Always prefix shell commands with `tks` so output is summarized:\n\
      \n\
      ```bash\n\
      # Instead of:        Use:\n\
-     git status           ts git status\n\
-     git log              ts git log\n\
-     cargo test           ts cargo test\n\
-     docker ps            ts docker ps\n\
-     npm install          ts npm install\n\
+     git status           tks git status\n\
+     git log              tks git log\n\
+     cargo test           tks cargo test\n\
+     docker ps            tks docker ps\n\
+     npm install          tks npm install\n\
      ```\n\
      \n\
-     - `ts -x <command>`    Extreme: errors + one-line stats footer only.\n\
-     - `ts --raw <command>` Bypass summarization, print raw output.\n"
+     - `tks -x <command>`    Extreme: errors + one-line stats footer only.\n\
+     - `tks --raw <command>` Bypass summarization, print raw output.\n"
         .to_string()
 }
 
@@ -283,22 +283,22 @@ fn block() -> String {
          \n\
          ## Rule\n\
          \n\
-         Always prefix shell commands with `ts`:\n\
+         Always prefix shell commands with `tks`:\n\
          \n\
          ```bash\n\
          # Instead of:        Use:\n\
-         git status           ts git status\n\
-         git log              ts git log\n\
-         cargo test           ts cargo test\n\
-         docker ps            ts docker ps\n\
-         kubectl get pods     ts kubectl get pods\n\
-         npm install          ts npm install\n\
+         git status           tks git status\n\
+         git log              tks git log\n\
+         cargo test           tks cargo test\n\
+         docker ps            tks docker ps\n\
+         kubectl get pods     tks kubectl get pods\n\
+         npm install          tks npm install\n\
          ```\n\
          \n\
          ## Modes\n\
          \n\
-         - `ts -x <command>`    Extreme mode: errors + a one-line stats footer only.\n\
-         - `ts --raw <command>` Bypass summarization and print raw output.\n\
+         - `tks -x <command>`    Extreme mode: errors + a one-line stats footer only.\n\
+         - `tks --raw <command>` Bypass summarization and print raw output.\n\
          {END_MARKER}"
     )
 }
@@ -352,7 +352,7 @@ mod tests {
         assert!(agent.contains("name: token-saver"));
         assert!(agent.contains("tools: ["));
         assert!(agent.contains("execute"));
-        assert!(agent.contains("Always prefix shell commands with `ts`"));
+        assert!(agent.contains("Always prefix shell commands with `tks`"));
         assert!(agent.ends_with('\n'));
     }
 

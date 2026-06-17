@@ -75,7 +75,7 @@ jobs:
           staging="token-saver-${{ matrix.target }}"
           mkdir -p "$staging"
           cp "target/${{ matrix.target }}/release/token-saver" "$staging/"
-          cp "target/${{ matrix.target }}/release/ts" "$staging/"
+          cp "target/${{ matrix.target }}/release/tks" "$staging/"
           cp README.md LICENSE "$staging/"
           tar -czf "$staging.tar.gz" "$staging"
           shasum -a 256 "$staging.tar.gz" > "$staging.tar.gz.sha256"
@@ -88,7 +88,7 @@ jobs:
           $staging = "token-saver-${{ matrix.target }}"
           New-Item -ItemType Directory -Force -Path $staging | Out-Null
           Copy-Item "target/${{ matrix.target }}/release/token-saver.exe" $staging
-          Copy-Item "target/${{ matrix.target }}/release/ts.exe" $staging
+          Copy-Item "target/${{ matrix.target }}/release/tks.exe" $staging
           Copy-Item README.md, LICENSE $staging
           Compress-Archive -Path $staging -DestinationPath "$staging.zip" -Force
           (Get-FileHash "$staging.zip" -Algorithm SHA256).Hash.ToLower() + "  $staging.zip" |

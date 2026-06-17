@@ -1,7 +1,6 @@
 [book]
 authors = ["token-saver contributors"]
 language = "en"
-multilingual = false
 src = "src"
 title = "token-saver Documentation"
 

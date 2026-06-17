@@ -6,20 +6,20 @@ its output, cutting token usage on noisy commands.
 
 ## Rule
 
-Always prefix shell commands with `ts`:
+Always prefix shell commands with `tks`:
 
 ```bash
 # Instead of:        Use:
-git status           ts git status
-git log              ts git log
-cargo test           ts cargo test
-docker ps            ts docker ps
-kubectl get pods     ts kubectl get pods
-npm install          ts npm install
+git status           tks git status
+git log              tks git log
+cargo test           tks cargo test
+docker ps            tks docker ps
+kubectl get pods     tks kubectl get pods
+npm install          tks npm install
 ```
 
 ## Modes
 
-- `ts -x <command>`    Extreme mode: errors + a one-line stats footer only.
-- `ts --raw <command>` Bypass summarization and print raw output.
+- `tks -x <command>`    Extreme mode: errors + a one-line stats footer only.
+- `tks --raw <command>` Bypass summarization and print raw output.
 <!-- /token-saver-instructions -->

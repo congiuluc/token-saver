@@ -213,7 +213,7 @@ or building from source.
 
 These one-liners download the right prebuilt archive for your platform from the
 [latest GitHub release](https://github.com/congiuluc/token-saver/releases/latest),
-verify its checksum, and install the `token-saver` and `ts` binaries onto your `PATH`.
+verify its checksum, and install the `token-saver` and `tks` binaries onto your `PATH`.
 If no release archive is available yet, the installer falls back to building
 from source with Cargo.
 
@@ -253,7 +253,7 @@ repository (works on every platform):
 cargo install --git https://github.com/congiuluc/token-saver
 ```
 
-This builds and copies the `token-saver` and `ts` binaries into your Cargo bin
+This builds and copies the `token-saver` and `tks` binaries into your Cargo bin
 directory (`~/.cargo/bin`), which `rustup` already puts on your `PATH`.
 
 ### Build from source
@@ -268,7 +268,7 @@ and produces small standalone executables at:
 
 ```text
 target/release/token-saver(.exe)   # main binary
-target/release/ts(.exe)           # short alias
+target/release/tks(.exe)          # short alias
 ```
 
 The `.exe` suffix is added on Windows only. For a faster, unoptimized debug
@@ -279,12 +279,12 @@ Then copy the binary somewhere on your `PATH`:
 ```sh
 # Linux / macOS
 install -m 0755 target/release/token-saver ~/.local/bin/
-install -m 0755 target/release/ts ~/.local/bin/
+install -m 0755 target/release/tks ~/.local/bin/
 ```
 
 ```powershell
 # Windows (PowerShell)
-Copy-Item target\release\token-saver.exe, target\release\ts.exe "$env:USERPROFILE\.cargo\bin\"
+Copy-Item target\release\token-saver.exe, target\release\tks.exe "$env:USERPROFILE\.cargo\bin\"
 ```
 
 ### Verify the install
@@ -324,7 +324,7 @@ token-saver -h | --help              Show help
 [GitHub Releases](https://github.com/congiuluc/token-saver/releases) for a newer
 version and, if one exists, downloads the prebuilt archive for your platform,
 verifies its SHA-256 checksum, and replaces the running `token-saver` (and the
-sibling `ts` alias) in place. It reuses the system's `curl`/`wget` or PowerShell,
+sibling `tks` alias) in place. It reuses the system's `curl`/`wget` or PowerShell,
 so no extra runtime dependency is added.
 
 ```text

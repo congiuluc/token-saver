@@ -4,7 +4,7 @@
 
 .DESCRIPTION
     Downloads the latest (or a pinned) prebuilt release archive from GitHub,
-    verifies its SHA-256 checksum, and installs the token-saver and ts binaries
+    verifies its SHA-256 checksum, and installs the token-saver and tks binaries
     into a directory on your PATH.
 
 .PARAMETER Version
@@ -67,9 +67,9 @@ function Install-FromSource {
 
     New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
     Copy-Item (Join-Path $sourceRoot "bin\token-saver.exe") (Join-Path $BinDir "token-saver.exe") -Force
-    Copy-Item (Join-Path $sourceRoot "bin\ts.exe") (Join-Path $BinDir "ts.exe") -Force
+    Copy-Item (Join-Path $sourceRoot "bin\tks.exe") (Join-Path $BinDir "tks.exe") -Force
 
-    Write-Host "Installed token-saver.exe and ts.exe to $BinDir"
+    Write-Host "Installed token-saver.exe and tks.exe to $BinDir"
 
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
     if ($userPath -notlike "*$BinDir*") {
@@ -131,9 +131,9 @@ try {
 
     New-Item -ItemType Directory -Force -Path $BinDir | Out-Null
     Copy-Item (Join-Path $tmp "token-saver-$target\token-saver.exe") (Join-Path $BinDir "token-saver.exe") -Force
-    Copy-Item (Join-Path $tmp "token-saver-$target\ts.exe") (Join-Path $BinDir "ts.exe") -Force
+    Copy-Item (Join-Path $tmp "token-saver-$target\tks.exe") (Join-Path $BinDir "tks.exe") -Force
 
-    Write-Host "Installed token-saver.exe and ts.exe to $BinDir"
+    Write-Host "Installed token-saver.exe and tks.exe to $BinDir"
 
     # Add the install directory to the user PATH if it is not already present.
     $userPath = [Environment]::GetEnvironmentVariable("Path", "User")

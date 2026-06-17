@@ -8,7 +8,7 @@ token-saver is cross-platform and runs on **Windows, Linux, and macOS** for both
 Each tagged release publishes prebuilt archives for every supported platform on
 the [GitHub Releases page](https://github.com/congiuluc/token-saver/releases). The
 install scripts below pick the correct archive for your OS and architecture,
-verify its SHA-256 checksum, and place the `token-saver` and `ts` binaries on your
+verify its SHA-256 checksum, and place the `token-saver` and `tks` binaries on your
 `PATH`.
 If the release archive is unavailable, the scripts fall back to building from
 source with Cargo.
@@ -68,16 +68,27 @@ The optimized binaries are produced at:
 
 ```text
 target/release/token-saver(.exe)   # main binary
-target/release/ts(.exe)           # short alias
+target/release/tks(.exe)          # short alias
 ```
 
 The `.exe` suffix is present on Windows only. Copy them to a directory on your
 `PATH` to finish.
 
+## The `tks` alias
+
+Every install method places **two** binaries on your `PATH`:
+
+- `token-saver` — the full command name.
+- `tks` — a short alias with identical behavior.
+
+`tks git status` is exactly the same as `token-saver git status`. The alias
+exists purely to save keystrokes in interactive shells and AI agent prompts.
+
 ## Verify
 
 ```sh
 token-saver --help
+tks --version
 ```
 
 ## Supported release archives

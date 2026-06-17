@@ -1,4 +1,4 @@
-//! `ts` is a short alias for the `token-saver` binary; both share the library crate.
+//! `tks` is a short alias for the `token-saver` binary; both share the library crate.
 
 use std::process::ExitCode;
 

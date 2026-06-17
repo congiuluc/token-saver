@@ -2,7 +2,7 @@
 # token-saver installer for Linux and macOS.
 #
 # Downloads the latest (or a pinned) prebuilt release archive from GitHub,
-# verifies its SHA-256 checksum, and installs the `token-saver` and `ts`
+# verifies its SHA-256 checksum, and installs the `token-saver` and `tks`
 # binaries into a directory on your PATH.
 #
 # Usage:
@@ -45,9 +45,9 @@ install_from_source() {
 
     mkdir -p "$BIN_DIR"
     install -m 0755 "$cargo_root/bin/token-saver" "$BIN_DIR/token-saver"
-    install -m 0755 "$cargo_root/bin/ts" "$BIN_DIR/ts"
+    install -m 0755 "$cargo_root/bin/tks" "$BIN_DIR/tks"
 
-    printf 'Installed token-saver and ts to %s\n' "$BIN_DIR"
+    printf 'Installed token-saver and tks to %s\n' "$BIN_DIR"
 
     case ":$PATH:" in
         *":$BIN_DIR:"*) ;;
@@ -118,9 +118,9 @@ tar -xzf "${tmp}/${asset}" -C "$tmp"
 
 mkdir -p "$BIN_DIR"
 install -m 0755 "${tmp}/token-saver-${target}/token-saver" "${BIN_DIR}/token-saver"
-install -m 0755 "${tmp}/token-saver-${target}/ts" "${BIN_DIR}/ts"
+install -m 0755 "${tmp}/token-saver-${target}/tks" "${BIN_DIR}/tks"
 
-printf 'Installed token-saver and ts to %s\n' "$BIN_DIR"
+printf 'Installed token-saver and tks to %s\n' "$BIN_DIR"
 
 case ":$PATH:" in
     *":$BIN_DIR:"*) ;;
