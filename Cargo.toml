@@ -22,4 +22,4 @@ strip = true
 panic = "abort"
 
 [dependencies]
-tiktoken-rs = "0.7"
+tiktoken-rs = "0.12"
